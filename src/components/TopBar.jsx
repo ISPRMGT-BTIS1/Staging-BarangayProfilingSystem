@@ -1,6 +1,9 @@
 import React from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling }) {
+  const { currentUser, getUserBarangay } = useAuth();
+
   return (
     <header className="h-16 border-b-2 border-[#16324A] bg-white flex items-center justify-between px-6 sticky top-0 z-40">
       {/* App Name */}
@@ -17,7 +20,7 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling }) 
           </svg>
           <span>Brgy. System</span>
         </span>
-        <span className="text-xs uppercase px-2 py-0.5 border border-[#D1D7CE] bg-[#F2F4F1] font-mono rounded text-slate-600 tracking-wider">
+        <span className="hidden sm:inline-block text-xs uppercase px-2 py-0.5 border border-[#D1D7CE] bg-[#F2F4F1] font-mono rounded text-slate-600 tracking-wider">
           Internal Console
         </span>
       </div>
@@ -38,8 +41,17 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling }) 
         />
       </div>
 
-      {/* New Profiling Button */}
-      <div>
+      {/* User Info & New Profiling Button */}
+      <div className="flex items-center space-x-4">
+        {currentUser && (
+          <div className="hidden md:flex flex-col text-right">
+            <span className="text-xs font-bold text-[#16324A]">{currentUser.fullName}</span>
+            <span className="text-[9px] text-[#2E5A44] font-mono font-bold uppercase tracking-wider bg-[#2E5A44]/10 border border-[#2E5A44]/20 px-1.5 py-0.5 rounded-sm">
+              {getUserBarangay()}
+            </span>
+          </div>
+        )}
+
         <button
           onClick={onNewProfiling}
           className="bg-[#16324A] hover:bg-[#1f4260] text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"

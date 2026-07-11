@@ -1,18 +1,36 @@
 import React, { useState } from "react";
+import { useAuth } from "./context/AuthContext";
+import LoginPage from "./pages/LoginPage";
 import TopBar from "./components/TopBar";
 import Sidebar from "./components/Sidebar";
 import DashboardView from "./components/DashboardView";
 import ReportsView from "./components/ReportsView";
 import ResidentsView from "./components/ResidentsView";
+import ResidentDetailView from "./components/ResidentDetailView";
 import HouseholdsView from "./components/HouseholdsView";
-import { residents as initialResidents } from "./mockData";
+import StreetsView from "./components/StreetsView";
+import UsersView from "./components/UsersView";
+import { residents as initialResidents, auditLog, getResidentDisplayName } from "./mockData";
 
 export default function App() {
+  const { currentUser } = useAuth();
+
+  // If not logged in, show login page
+  if (!currentUser) {
+    return <LoginPage />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
+  const { currentUser, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewProfilingModal, setShowNewProfilingModal] = useState(false);
   const [selectedHouseholdId, setSelectedHouseholdId] = useState(null);
   const [residentsList, setResidentsList] = useState(initialResidents);
+  const [selectedResidentId, setSelectedResidentId] = useState(null);
 
   const handleNewProfiling = () => {
     setActiveTab("residents");
@@ -20,14 +38,24 @@ export default function App() {
   };
 
   const handlePrintBirthdays = (celebrators) => {
-    const listStr = celebrators.map(c => `- ${c.name} (${c.age} yrs, Resident ID: ${c.residentId})`).join("\n");
+    const listStr = celebrators.map(c => `- ${getResidentDisplayName(c)} (Resident ID: ${c.residentId})`).join("\n");
     alert(`-----------------------------------------\nOFFICIAL SNAPS: BIRTHDAY CELEBRATORS LIST\n-----------------------------------------\nDate: ${new Date().toLocaleDateString()}\n\n${listStr}\n\n-----------------------------------------\nSending list print job to spooler...`);
+  };
+
+  const handleViewResident = (residentId) => {
+    setSelectedResidentId(residentId);
+    setActiveTab("residentDetail");
+  };
+
+  const handleBackToResidents = () => {
+    setSelectedResidentId(null);
+    setActiveTab("residents");
   };
 
   const renderActiveView = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardView onPrintBirthdays={handlePrintBirthdays} />;
+        return <DashboardView onPrintBirthdays={handlePrintBirthdays} residentsList={residentsList} />;
       case "residents":
         return (
           <ResidentsView
@@ -39,6 +67,15 @@ export default function App() {
             setSelectedHouseholdId={setSelectedHouseholdId}
             residentsList={residentsList}
             setResidentsList={setResidentsList}
+            onViewResident={handleViewResident}
+          />
+        );
+      case "residentDetail":
+        return (
+          <ResidentDetailView
+            residentId={selectedResidentId}
+            residentsList={residentsList}
+            onBack={handleBackToResidents}
           />
         );
       case "households":
@@ -51,7 +88,11 @@ export default function App() {
           />
         );
       case "reports":
-        return <ReportsView />;
+        return <ReportsView residentsList={residentsList} />;
+      case "streets":
+        return isAdmin ? <StreetsView /> : <DashboardView onPrintBirthdays={handlePrintBirthdays} residentsList={residentsList} />;
+      case "users":
+        return isAdmin ? <UsersView /> : <DashboardView onPrintBirthdays={handlePrintBirthdays} residentsList={residentsList} />;
       case "settings":
         return (
           <div className="flex-1 p-6 overflow-y-auto space-y-6">
@@ -103,27 +144,36 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Section 3: Registry Audits */}
+              {/* Section 3: Audit Log */}
               <div>
                 <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-2">
-                  System Audit Logs Settings
+                  System Audit Log
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs py-1 border-b border-[#D1D7CE]/40">
-                    <span className="text-slate-600">Auto-backup snapshot logs weekly</span>
-                    <span className="font-mono font-bold text-[#2E5A44] bg-[#2E5A44]/10 border border-[#2E5A44]/20 px-2 rounded-xs">Enabled</span>
+                {auditLog.length > 0 ? (
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {[...auditLog].reverse().slice(0, 20).map((entry) => (
+                      <div key={entry.auditId} className="flex items-center justify-between text-xs py-1.5 border-b border-[#D1D7CE]/40">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-slate-400 font-mono text-[10px]">
+                            {new Date(entry.performedAt).toLocaleString()}
+                          </span>
+                          <span className="text-slate-600">
+                            <strong className="text-[#16324A]">{entry.actionType}</strong> on <span className="font-mono">{entry.tableName}</span>
+                          </span>
+                        </div>
+                        <span className="font-mono text-[10px] text-slate-400">{entry.recordId}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between text-xs py-1 border-b border-[#D1D7CE]/40">
-                    <span className="text-slate-600">Require supervisor key for Deceased status flags</span>
-                    <span className="font-mono font-bold text-[#2E5A44] bg-[#2E5A44]/10 border border-[#2E5A44]/20 px-2 rounded-xs">Enabled</span>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic py-2">No audit log entries yet. Actions will be logged as you use the system.</p>
+                )}
               </div>
             </div>
           </div>
         );
       default:
-        return <DashboardView />;
+        return <DashboardView onPrintBirthdays={handlePrintBirthdays} residentsList={residentsList} />;
     }
   };
 

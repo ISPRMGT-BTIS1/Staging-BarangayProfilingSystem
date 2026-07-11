@@ -1,11 +1,18 @@
 import React from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar({ activeTab, setActiveTab }) {
+  const { currentUser, logout, isAdmin, getUserRole } = useAuth();
+
   const navItems = [
     { id: "dashboard", label: "Dashboard" },
     { id: "residents", label: "Residents" },
     { id: "households", label: "Households" },
     { id: "reports", label: "Reports" },
+    ...(isAdmin ? [
+      { id: "streets", label: "Streets" },
+      { id: "users", label: "Users" }
+    ] : []),
     { id: "settings", label: "Settings" }
   ];
 
@@ -48,6 +55,20 @@ export default function Sidebar({ activeTab, setActiveTab }) {
             <path d="M16 17H8" />
           </svg>
         );
+      case "streets":
+        return (
+          <svg className={`h-4 w-4 fill-none stroke-current ${strokeColor}`} viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z" />
+            <path d="M9 4v13" />
+            <path d="M15 7v13" />
+          </svg>
+        );
+      case "users":
+        return (
+          <svg className={`h-4 w-4 fill-none stroke-current ${strokeColor}`} viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        );
       case "settings":
         return (
           <svg className={`h-4 w-4 fill-none stroke-current ${strokeColor}`} viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -58,6 +79,11 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       default:
         return null;
     }
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   return (
@@ -88,21 +114,21 @@ export default function Sidebar({ activeTab, setActiveTab }) {
         {/* Logged in user info */}
         <div className="flex items-center space-x-3 bg-[#16324A]/50 p-2.5 rounded-sm border border-[#1f4260]/60">
           <div className="h-8 w-8 rounded-full bg-[#C8932B] flex items-center justify-center font-bold text-white text-xs shadow-inner">
-            AU
+            {getInitials(currentUser?.fullName)}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate font-sans">
-              Admin User
+              {currentUser?.fullName || "Guest User"}
             </p>
             <p className="text-[10px] text-slate-300 uppercase tracking-wider font-mono truncate">
-              Manager
+              {getUserRole() || "Guest"}
             </p>
           </div>
         </div>
 
         {/* Sign Out Button */}
         <button
-          onClick={() => alert("Signing out of system...")}
+          onClick={logout}
           className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-xs font-medium uppercase tracking-wider text-slate-300 hover:text-red-300 hover:bg-red-950/20 border border-[#1f4260] rounded-xs cursor-pointer transition-all"
         >
           <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

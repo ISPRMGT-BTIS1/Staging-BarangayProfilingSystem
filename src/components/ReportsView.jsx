@@ -1,25 +1,38 @@
 import React, { useState } from "react";
-import { residents, households, generatedReports } from "../mockData";
+import {
+  households,
+  generatedReports,
+  calculateAge,
+  getHouseholdBarangay,
+  residentStatuses
+} from "../mockData";
 
-export default function ReportsView() {
+export default function ReportsView({ residentsList }) {
+  const currentResidents = residentsList || [];
+
   // Toggle state for the demographics legend
   const [highlightGender, setHighlightGender] = useState("all"); // "all", "male", "female"
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  // Dynamic calculations
-  const totalResidentsCount = residents.filter(r => r.status !== "Deceased").length;
-  const totalSeniorsCount = residents.filter(r => r.age >= 60 && r.status !== "Deceased").length;
+  // Dynamic calculations using new schema fields
+  const totalResidentsCount = currentResidents.filter(r => r.residencyStatus !== "Deceased").length;
+  
+  // Seniors (age >= 60)
+  const totalSeniorsCount = currentResidents.filter(
+    r => calculateAge(r.birthDate) >= 60 && r.residencyStatus !== "Deceased"
+  ).length;
+
   const totalHouseholdsCount = households.length;
 
-  const maleCount = residents.filter(r => r.sex === "Male" && r.status !== "Deceased").length;
-  const femaleCount = residents.filter(r => r.sex === "Female" && r.status !== "Deceased").length;
-  const malePercentage = ((maleCount / totalResidentsCount) * 100).toFixed(1);
-  const femalePercentage = ((femaleCount / totalResidentsCount) * 100).toFixed(1);
+  // Gender counts
+  const maleCount = currentResidents.filter(r => r.sex === "Male" && r.residencyStatus !== "Deceased").length;
+  const femaleCount = currentResidents.filter(r => r.sex === "Female" && r.residencyStatus !== "Deceased").length;
+  
+  const malePercentage = totalResidentsCount > 0 ? ((maleCount / totalResidentsCount) * 100).toFixed(1) : 0;
+  const femalePercentage = totalResidentsCount > 0 ? ((femaleCount / totalResidentsCount) * 100).toFixed(1) : 0;
 
-  // Calculate target progress
-  // Households progress against target of 10 households
+  // Calculate target progress (out of target of 10)
   const householdProgress = Math.min((totalHouseholdsCount / 10) * 100, 100).toFixed(0);
-  // Seniors progress against senior vaccination target of 10 seniors
   const seniorProgress = Math.min((totalSeniorsCount / 10) * 100, 100).toFixed(0);
 
   const toggleMenu = (id) => {

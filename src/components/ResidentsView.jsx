@@ -1,5 +1,26 @@
 import React, { useState } from "react";
-import { residents as initialResidents, households, families } from "../mockData";
+import {
+  residents as allResidents,
+  households,
+  families,
+  familyRelations,
+  barangays,
+  streets,
+  addresses,
+  residentStatuses,
+  calculateAge,
+  getResidentDisplayName,
+  getResidentShortName,
+  getHouseholdAddress,
+  getHouseholdBarangay,
+  getFamilyHeadName,
+  getFamilyMemberCount,
+  generateId
+} from "../mockData";
+import { useAuth } from "../context/AuthContext";
+import { logAudit } from "../utils/auditLogger";
+
+const STATUS_TYPES = ["Senior Citizen", "PWD", "Voter", "Student", "Solo Parent", "Indigent", "Other"];
 
 export default function ResidentsView({
   searchQuery,
@@ -9,11 +30,15 @@ export default function ResidentsView({
   setActiveTab,
   setSelectedHouseholdId,
   residentsList,
-  setResidentsList
+  setResidentsList,
+  onViewResident
 }) {
+  const { currentUser } = useAuth();
+
   // Filters state
   const [statusFilter, setStatusFilter] = useState("all");
   const [barangayFilter, setBarangayFilter] = useState("all");
+  const [residentStatusFilter, setResidentStatusFilter] = useState("all");
   
   // Sorting state
   const [sortField, setSortField] = useState("residentId");
@@ -21,17 +46,56 @@ export default function ResidentsView({
 
   // New profiling form state
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "", middleName: "", lastName: "",
     birthDate: "",
     sex: "Male",
     civilStatus: "Single",
-    contactNo: "",
-    occupation: "",
+    contactNumber: "",
+    occupation: "", company: "",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-1",
-    familyId: "F-1"
+    residencyStatus: "Active",
+    residencyLengthYears: "",
+    isDependent: true,
+    householdId: "", familyId: "",
+    parentId: "",
+    emergencyContactName: "",
+    emergencyContactRelationship: "",
+    emergencyContactNumber: "",
+    selectedStatuses: []
   });
+
+  // Cascading dropdown states
+  const [selectedBarangayId, setSelectedBarangayId] = useState("");
+  const [selectedStreetId, setSelectedStreetId] = useState("");
+
+  // Collapsible form sections
+  const [expandedSections, setExpandedSections] = useState({
+    personal: true, address: true, work: true, statuses: true, registry: true
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Cascading filters
+  const filteredStreets = selectedBarangayId
+    ? streets.filter(s => s.barangayId === selectedBarangayId)
+    : [];
+
+  const filteredHouseholds = selectedBarangayId
+    ? households.filter(h => {
+        const addr = addresses.find(a => a.addressId === h.addressId);
+        if (!addr) return false;
+        const street = streets.find(s => s.streetId === addr.streetId);
+        if (!street) return false;
+        if (selectedStreetId && street.streetId !== selectedStreetId) return false;
+        return street.barangayId === selectedBarangayId;
+      })
+    : households;
+
+  const filteredFamilies = formData.householdId
+    ? families.filter(f => f.householdId === formData.householdId)
+    : families;
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -44,24 +108,30 @@ export default function ResidentsView({
 
   // Filter & Search computation
   const filteredResidents = residentsList.filter(resident => {
-    const household = households.find(h => h.addressId === resident.addressId);
+    const displayName = getResidentDisplayName(resident);
+    const barangayName = getHouseholdBarangay(resident.householdId);
     
     // Search filter
     const matchesSearch = searchQuery
-      ? resident.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ? displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         resident.residentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (resident.occupation && resident.occupation.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
 
-    // Status filter
-    const matchesStatus = statusFilter === "all" ? true : resident.status === statusFilter;
+    // Residency status filter
+    const matchesStatus = statusFilter === "all" ? true : resident.residencyStatus === statusFilter;
 
     // Barangay filter
     const matchesBarangay = barangayFilter === "all"
       ? true
-      : household?.barangay === barangayFilter;
+      : barangayName === barangayFilter;
 
-    return matchesSearch && matchesStatus && matchesBarangay;
+    // Resident status filter (Senior, PWD, etc.)
+    const matchesResidentStatus = residentStatusFilter === "all"
+      ? true
+      : residentStatuses.some(rs => rs.residentId === resident.residentId && rs.statusType === residentStatusFilter);
+
+    return matchesSearch && matchesStatus && matchesBarangay && matchesResidentStatus;
   });
 
   // Sorted computation
@@ -69,11 +139,24 @@ export default function ResidentsView({
     let aVal = a[sortField];
     let bVal = b[sortField];
 
+    if (sortField === "name" || sortField === "lastName") {
+      aVal = `${a.lastName}, ${a.firstName}`;
+      bVal = `${b.lastName}, ${b.firstName}`;
+    }
+
+    if (sortField === "age") {
+      aVal = calculateAge(a.birthDate);
+      bVal = calculateAge(b.birthDate);
+    }
+
     if (sortField === "barangay") {
-      const hA = households.find(h => h.addressId === a.addressId);
-      const hB = households.find(h => h.addressId === b.addressId);
-      aVal = hA?.barangay || "";
-      bVal = hB?.barangay || "";
+      aVal = getHouseholdBarangay(a.householdId);
+      bVal = getHouseholdBarangay(b.householdId);
+    }
+
+    if (sortField === "status") {
+      aVal = a.residencyStatus;
+      bVal = b.residencyStatus;
     }
 
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -83,74 +166,128 @@ export default function ResidentsView({
 
   // Form handlers
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: type === "checkbox" ? checked : value
     });
   };
 
-  const calculateAge = (dobString) => {
-    if (!dobString) return 0;
-    const today = new Date();
-    const birthDate = new Date(dobString);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
+  const toggleStatus = (statusType) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedStatuses: prev.selectedStatuses.includes(statusType)
+        ? prev.selectedStatuses.filter(s => s !== statusType)
+        : [...prev.selectedStatuses, statusType]
+    }));
+  };
+
+  const handleBarangayChange = (e) => {
+    setSelectedBarangayId(e.target.value);
+    setSelectedStreetId("");
+    setFormData(prev => ({ ...prev, householdId: "", familyId: "" }));
+  };
+
+  const handleStreetChange = (e) => {
+    setSelectedStreetId(e.target.value);
+    setFormData(prev => ({ ...prev, householdId: "", familyId: "" }));
   };
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.birthDate) {
-      alert("Please fill in all required fields (Name and Birth Date).");
+    if (!formData.firstName || !formData.lastName || !formData.birthDate) {
+      alert("Please fill in all required fields (First Name, Last Name, and Birth Date).");
       return;
     }
 
-    const calculatedAge = calculateAge(formData.birthDate);
     const newResidentId = `R-${String(residentsList.length + 1).padStart(4, "0")}`;
+    const today = new Date().toISOString().split("T")[0];
 
     const newResident = {
       residentId: newResidentId,
-      name: formData.name,
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      lastName: formData.lastName,
       birthDate: formData.birthDate,
-      age: calculatedAge,
       sex: formData.sex,
       civilStatus: formData.civilStatus,
-      contactNo: formData.contactNo || "N/A",
+      contactNumber: formData.contactNumber || "N/A",
       occupation: formData.occupation || "Unemployed",
+      company: formData.company || "N/A",
       citizenship: formData.citizenship,
-      status: formData.status,
-      addressId: formData.addressId,
-      familyId: formData.familyId
+      residencyStatus: formData.residencyStatus,
+      residencyLengthYears: parseFloat(formData.residencyLengthYears) || 0,
+      isDependent: formData.isDependent,
+      householdId: formData.householdId || "H-1",
+      familyId: formData.familyId || "F-1",
+      parentId: formData.parentId || null,
+      emergencyContactName: formData.emergencyContactName || "",
+      emergencyContactRelationship: formData.emergencyContactRelationship || "",
+      emergencyContactNumber: formData.emergencyContactNumber || "",
+      createdBy: currentUser?.userId || "USR-1",
+      createdAt: today,
+      updatedBy: null,
+      updatedAt: null
     };
 
     setResidentsList([newResident, ...residentsList]);
+
+    // Push resident statuses
+    formData.selectedStatuses.forEach(statusType => {
+      residentStatuses.push({
+        residentStatusId: generateId("RS"),
+        residentId: newResidentId,
+        statusType,
+        dateAdded: today,
+        notes: null
+      });
+    });
+
+    // Log audit
+    logAudit("residents", newResidentId, "CREATE", currentUser?.userId || "USR-1",
+      `Created resident: ${formData.lastName}, ${formData.firstName}`);
+
     setShowNewProfilingModal(false);
     
     // Reset form
     setFormData({
-      name: "",
+      firstName: "", middleName: "", lastName: "",
       birthDate: "",
       sex: "Male",
       civilStatus: "Single",
-      contactNo: "",
-      occupation: "",
+      contactNumber: "",
+      occupation: "", company: "",
       citizenship: "Filipino",
-      status: "Active",
-      addressId: "H-1",
-      familyId: "F-1"
+      residencyStatus: "Active",
+      residencyLengthYears: "",
+      isDependent: true,
+      householdId: "", familyId: "",
+      parentId: "",
+      emergencyContactName: "",
+      emergencyContactRelationship: "",
+      emergencyContactNumber: "",
+      selectedStatuses: []
     });
+    setSelectedBarangayId("");
+    setSelectedStreetId("");
 
-    alert(`Successfully registered resident ${formData.name} under record ${newResidentId}!`);
+    alert(`Successfully registered resident ${formData.lastName}, ${formData.firstName} under record ${newResidentId}!`);
   };
 
   const handleHouseholdLink = (householdId) => {
     setSelectedHouseholdId(householdId);
     setActiveTab("households");
   };
+
+  // Get status chips for a resident
+  const getStatusChips = (residentId) => {
+    return residentStatuses.filter(rs => rs.residentId === residentId);
+  };
+
+  // Input field class (reused)
+  const inputClass = "border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]";
+  const selectClass = `${inputClass} cursor-pointer`;
+  const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
 
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
@@ -192,6 +329,21 @@ export default function ResidentsView({
               <option value="Barangay Santa Isabel">BARANGAY SANTA ISABEL</option>
             </select>
           </div>
+
+          {/* Resident Status Filter (NEW) */}
+          <div className="flex flex-col">
+            <label className="text-[10px] uppercase font-mono font-bold text-slate-400 mb-1">Resident Status</label>
+            <select
+              value={residentStatusFilter}
+              onChange={(e) => setResidentStatusFilter(e.target.value)}
+              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+            >
+              <option value="all">ALL CATEGORIES</option>
+              {STATUS_TYPES.map(st => (
+                <option key={st} value={st}>{st.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="text-xs font-mono font-semibold text-slate-500">
@@ -208,8 +360,8 @@ export default function ResidentsView({
                 <th className="cursor-pointer select-none" onClick={() => handleSort("residentId")}>
                   ID {sortField === "residentId" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
-                <th className="cursor-pointer select-none" onClick={() => handleSort("name")}>
-                  Name {sortField === "name" && (sortOrder === "asc" ? "▲" : "▼")}
+                <th className="cursor-pointer select-none" onClick={() => handleSort("lastName")}>
+                  Name {sortField === "lastName" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
                 <th className="cursor-pointer select-none" onClick={() => handleSort("age")}>
                   Age/Sex {sortField === "age" && (sortOrder === "asc" ? "▲" : "▼")}
@@ -217,7 +369,7 @@ export default function ResidentsView({
                 <th className="cursor-pointer select-none" onClick={() => handleSort("barangay")}>
                   Address / Sector {sortField === "barangay" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
-                <th>Relations Head</th>
+                <th>Statuses</th>
                 <th className="cursor-pointer select-none" onClick={() => handleSort("status")}>
                   Registry Status {sortField === "status" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
@@ -227,8 +379,10 @@ export default function ResidentsView({
             <tbody>
               {sortedResidents.length > 0 ? (
                 sortedResidents.map((resident) => {
-                  const household = households.find(h => h.addressId === resident.addressId);
-                  const family = families.find(f => f.familyId === resident.familyId);
+                  const age = calculateAge(resident.birthDate);
+                  const addressStr = getHouseholdAddress(resident.householdId);
+                  const barangayName = getHouseholdBarangay(resident.householdId);
+                  const statusChips = getStatusChips(resident.residentId);
                   
                   return (
                     <tr key={resident.residentId}>
@@ -237,67 +391,68 @@ export default function ResidentsView({
                         {resident.residentId}
                       </td>
                       
-                      {/* Name */}
+                      {/* Name — Last, First format */}
                       <td>
-                        <div className="font-bold text-[#16324A] text-sm">{resident.name}</div>
+                        <div className="font-bold text-[#16324A] text-sm">{getResidentShortName(resident)}</div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">DOB: {resident.birthDate} &bull; {resident.civilStatus}</div>
                       </td>
 
                       {/* Age & Sex */}
                       <td>
-                        <div className="text-xs font-semibold">{resident.age} yrs / {resident.sex}</div>
+                        <div className="text-xs font-semibold">{age} yrs / {resident.sex}</div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">{resident.occupation}</div>
                       </td>
 
                       {/* Address / Household link */}
                       <td>
                         <button
-                          onClick={() => handleHouseholdLink(resident.addressId)}
+                          onClick={() => handleHouseholdLink(resident.householdId)}
                           className="text-left group cursor-pointer"
                         >
                           <div className="text-xs font-bold text-[#16324A] group-hover:underline flex items-center space-x-1">
                             <span>🏠</span>
-                            <span>{household ? `${household.houseNo} ${household.street}` : "N/A"}</span>
+                            <span>{addressStr}</span>
                           </div>
                           <div className="text-[10px] text-slate-400 group-hover:text-[#16324A] font-mono mt-0.5 uppercase tracking-wide">
-                            {household?.barangay} &bull; ID: {resident.addressId}
+                            {barangayName} &bull; {resident.householdId}
                           </div>
                         </button>
                       </td>
 
-                      {/* Family linking info */}
-                      <td className="align-middle">
-                        {family ? (
-                          <div>
-                            <div className="text-xs font-medium text-slate-700">Head: {family.familyHead}</div>
-                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                              ID: <span className="font-semibold">{resident.familyId}</span> ({family.memberCount} members)
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-xs">No Family Link</span>
-                        )}
+                      {/* Status chips (NEW) */}
+                      <td>
+                        <div className="flex flex-wrap gap-1">
+                          {statusChips.length > 0 ? (
+                            statusChips.map(sc => (
+                              <span key={sc.residentStatusId} className="inline-block text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm bg-[#16324A]/5 text-[#16324A] border border-[#16324A]/15">
+                                {sc.statusType === "Senior Citizen" ? "Senior" : sc.statusType}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-slate-300 font-mono">—</span>
+                          )}
+                        </div>
                       </td>
 
-                      {/* Status styled like stamps */}
+                      {/* Residency Status styled like stamps */}
                       <td>
                         <span className={
-                          resident.status === "Active"
+                          resident.residencyStatus === "Active"
                             ? "seal-stamped-active"
-                            : resident.status === "Inactive"
+                            : resident.residencyStatus === "Inactive"
                               ? "seal-stamped-inactive"
-                              : resident.status === "Moved"
+                              : resident.residencyStatus === "Moved"
                                 ? "seal-stamped-gold"
                                 : "seal-stamped text-slate-500 bg-slate-100"
                         }>
-                          {resident.status}
+                          {resident.residencyStatus}
                         </span>
                       </td>
 
                       {/* Actions */}
                       <td className="text-right">
                         <button
-                          onClick={() => alert(`Record Details for ${resident.name}:\nID: ${resident.residentId}\nCitizen: ${resident.citizenship}\nContact: ${resident.contactNo}`)}
+                          onClick={() => onViewResident(resident.residentId)}
                           className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                         >
                           Verify Profile
@@ -318,13 +473,13 @@ export default function ResidentsView({
         </div>
       </section>
 
-      {/* Profiling Form Modal */}
+      {/* Profiling Form Modal — Full-page with collapsible sections */}
       {showNewProfilingModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-xl rounded-xs overflow-hidden shadow-xl flex flex-col">
+          <div className="bg-white border-2 border-[#16324A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>📋</span>
                 <span>Resident Registry Profiling Form</span>
@@ -338,160 +493,244 @@ export default function ResidentsView({
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[75vh] font-sans">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Full Name */}
-                <div className="col-span-2 flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
-                    Full Name <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Juan Dela Cruz Jr."
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
-                  />
-                </div>
-
-                {/* DOB */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
-                    Date of Birth <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="birthDate"
-                    required
-                    value={formData.birthDate}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
-                  />
-                </div>
-
-                {/* Sex */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Sex</label>
-                  <select
-                    name="sex"
-                    value={formData.sex}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </select>
-                </div>
-
-                {/* Civil Status */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Civil Status</label>
-                  <select
-                    name="civilStatus"
-                    value={formData.civilStatus}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
-                  >
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Widowed">Widowed</option>
-                    <option value="Separated">Separated</option>
-                  </select>
-                </div>
-
-                {/* Contact Number */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Contact Number</label>
-                  <input
-                    type="text"
-                    name="contactNo"
-                    value={formData.contactNo}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 09171234567"
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
-                  />
-                </div>
-
-                {/* Occupation */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Occupation</label>
-                  <input
-                    type="text"
-                    name="occupation"
-                    value={formData.occupation}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Sari-sari owner"
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
-                  />
-                </div>
-
-                {/* Citizenship */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Citizenship</label>
-                  <input
-                    type="text"
-                    name="citizenship"
-                    value={formData.citizenship}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
-                  />
-                </div>
-
-                {/* Linked Household */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Household Link</label>
-                  <select
-                    name="addressId"
-                    value={formData.addressId}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
-                  >
-                    {households.map(h => (
-                      <option key={h.addressId} value={h.addressId}>
-                        {h.houseNo} {h.street} ({h.barangay.replace("Barangay ", "Brgy. ")})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Linked Family */}
-                <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Family Unit Link</label>
-                  <select
-                    name="familyId"
-                    value={formData.familyId}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
-                  >
-                    {families.map(f => (
-                      <option key={f.familyId} value={f.familyId}>
-                        {f.familyId}: Head - {f.familyHead}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Registry Status */}
-                <div className="col-span-2 flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Initial Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer font-semibold"
-                  >
-                    <option value="Active">Active Record</option>
-                    <option value="Inactive">Inactive Record</option>
-                    <option value="Moved">Moved Outside Barangay</option>
-                    <option value="Deceased">Deceased</option>
-                  </select>
-                </div>
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 font-sans">
+              
+              {/* Section A — Personal Information */}
+              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
+                <button type="button" onClick={() => toggleSection("personal")}
+                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
+                  <span>Section A — Personal Information</span>
+                  <span>{expandedSections.personal ? "▲" : "▼"}</span>
+                </button>
+                {expandedSections.personal && (
+                  <div className="p-4 grid grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <label className={labelClass}>First Name <span className="text-red-600">*</span></label>
+                      <input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange} placeholder="e.g. Juan" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Middle Name</label>
+                      <input type="text" name="middleName" value={formData.middleName} onChange={handleInputChange} placeholder="Optional" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Last Name <span className="text-red-600">*</span></label>
+                      <input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange} placeholder="e.g. Dela Cruz" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Date of Birth <span className="text-red-600">*</span></label>
+                      <input type="date" name="birthDate" required value={formData.birthDate} onChange={handleInputChange} className={inputClass} />
+                      {formData.birthDate && (
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          Age: {calculateAge(formData.birthDate)} years
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Sex</label>
+                      <select name="sex" value={formData.sex} onChange={handleInputChange} className={selectClass}>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Civil Status</label>
+                      <select name="civilStatus" value={formData.civilStatus} onChange={handleInputChange} className={selectClass}>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Widowed">Widowed</option>
+                        <option value="Separated">Separated</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Citizenship</label>
+                      <input type="text" name="citizenship" value={formData.citizenship} onChange={handleInputChange} className={inputClass} />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">
+              {/* Section B — Address & Household Assignment */}
+              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
+                <button type="button" onClick={() => toggleSection("address")}
+                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
+                  <span>Section B — Address & Household Assignment</span>
+                  <span>{expandedSections.address ? "▲" : "▼"}</span>
+                </button>
+                {expandedSections.address && (
+                  <div className="p-4 grid grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Barangay</label>
+                      <select value={selectedBarangayId} onChange={handleBarangayChange} className={selectClass}>
+                        <option value="">Select Barangay...</option>
+                        {barangays.map(b => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Street</label>
+                      <select value={selectedStreetId} onChange={handleStreetChange} className={selectClass} disabled={!selectedBarangayId}>
+                        <option value="">Select Street...</option>
+                        {filteredStreets.map(s => (
+                          <option key={s.streetId} value={s.streetId}>{s.streetName}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Household</label>
+                      <select name="householdId" value={formData.householdId} onChange={handleInputChange} className={selectClass}>
+                        <option value="">Select Household...</option>
+                        {filteredHouseholds.map(h => {
+                          const addr = addresses.find(a => a.addressId === h.addressId);
+                          const st = addr ? streets.find(s => s.streetId === addr.streetId) : null;
+                          return (
+                            <option key={h.householdId} value={h.householdId}>
+                              {h.householdId}: {addr?.houseNo} {st?.streetName || ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Family Unit</label>
+                      <select name="familyId" value={formData.familyId} onChange={handleInputChange} className={selectClass}>
+                        <option value="">Select Family...</option>
+                        {filteredFamilies.map(f => (
+                          <option key={f.familyId} value={f.familyId}>
+                            {f.familyId}: Head - {getFamilyHeadName(f.familyId)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Residency Length (years)</label>
+                      <input type="number" name="residencyLengthYears" step="0.5" min="0" value={formData.residencyLengthYears} onChange={handleInputChange} placeholder="e.g. 5.5" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col justify-end">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="isDependent" checked={!formData.isDependent}
+                          onChange={(e) => setFormData(prev => ({ ...prev, isDependent: !e.target.checked }))}
+                          className="accent-[#2E5A44]" />
+                        <span className="text-xs font-semibold text-[#16324A]">This person is the Family Head</span>
+                      </label>
+                    </div>
+                    <div className="col-span-2 flex flex-col">
+                      <label className={labelClass}>Parent (Linked Resident)</label>
+                      <select name="parentId" value={formData.parentId} onChange={handleInputChange} className={selectClass}>
+                        <option value="">None — No parent link</option>
+                        {residentsList.filter(r => r.residencyStatus !== "Deceased").map(r => (
+                          <option key={r.residentId} value={r.residentId}>
+                            {r.residentId}: {getResidentShortName(r)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section C — Work & Contact */}
+              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
+                <button type="button" onClick={() => toggleSection("work")}
+                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
+                  <span>Section C — Work & Contact</span>
+                  <span>{expandedSections.work ? "▲" : "▼"}</span>
+                </button>
+                {expandedSections.work && (
+                  <div className="p-4 grid grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Occupation</label>
+                      <input type="text" name="occupation" value={formData.occupation} onChange={handleInputChange} placeholder="e.g. Sari-sari owner" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Company / Workplace</label>
+                      <input type="text" name="company" value={formData.company} onChange={handleInputChange} placeholder="Complete with area/address" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Contact Number</label>
+                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g. 09171234567" className={inputClass} />
+                    </div>
+                    <div className="col-span-2 border-t border-[#D1D7CE]/40 pt-3 mt-1">
+                      <p className="text-[10px] uppercase font-mono font-bold text-slate-400 mb-2">Emergency Contact</p>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Emergency Contact Name</label>
+                      <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleInputChange} className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Relationship</label>
+                      <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleInputChange} placeholder="e.g. Spouse, Parent" className={inputClass} />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={labelClass}>Emergency Contact Number</label>
+                      <input type="text" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleInputChange} className={inputClass} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section D — Resident Statuses */}
+              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
+                <button type="button" onClick={() => toggleSection("statuses")}
+                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
+                  <span>Section D — Resident Statuses</span>
+                  <span>{expandedSections.statuses ? "▲" : "▼"}</span>
+                </button>
+                {expandedSections.statuses && (
+                  <div className="p-4">
+                    <p className="text-xs text-slate-500 mb-3">Toggle applicable status tags for this resident:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {STATUS_TYPES.map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => toggleStatus(type)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-xs border transition-all cursor-pointer ${
+                            formData.selectedStatuses.includes(type)
+                              ? "bg-[#2E5A44] text-white border-[#2E5A44]"
+                              : "bg-white text-slate-600 border-[#D1D7CE] hover:border-[#16324A] hover:text-[#16324A]"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section E — Registry Status */}
+              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
+                <button type="button" onClick={() => toggleSection("registry")}
+                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
+                  <span>Section E — Registry Status</span>
+                  <span>{expandedSections.registry ? "▲" : "▼"}</span>
+                </button>
+                {expandedSections.registry && (
+                  <div className="p-4">
+                    <div className="flex flex-col max-w-xs">
+                      <label className={labelClass}>Residency Status</label>
+                      <select name="residencyStatus" value={formData.residencyStatus} onChange={handleInputChange} className={`${selectClass} font-semibold`}>
+                        <option value="Active">Active Record</option>
+                        <option value="Inactive">Inactive Record</option>
+                        <option value="Moved">Moved Outside Barangay</option>
+                        <option value="Deceased">Deceased</option>
+                      </select>
+                    </div>
+                    {formData.residencyStatus === "Deceased" && (
+                      <div className="mt-3 bg-[#9B3D30]/10 border border-[#9B3D30]/30 text-[#9B3D30] text-xs font-semibold px-4 py-2.5 rounded-xs flex items-center space-x-2">
+                        <span>⚠️</span>
+                        <span>This action requires supervisor confirmation.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Form Actions — Sticky bottom */}
+              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6 sticky bottom-0 bg-white pb-2">
                 <button
                   type="button"
                   onClick={() => setShowNewProfilingModal(false)}

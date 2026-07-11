@@ -1,478 +1,590 @@
 // Realistic Filipino Sample Data for Barangay Profiling System (Brgy. System)
+// Based on June 29 DB Schema · Barangay Profiling System
 
 export const barangays = [
   { id: "BRGY-1", name: "Barangay San Jose" },
   { id: "BRGY-2", name: "Barangay Santa Isabel" }
 ];
 
+// NEW: streets
+export const streets = [
+  { streetId: "ST-1", barangayId: "BRGY-1", streetName: "Rizal Avenue" },
+  { streetId: "ST-2", barangayId: "BRGY-1", streetName: "Magsaysay St." },
+  { streetId: "ST-3", barangayId: "BRGY-2", streetName: "Mabini St." },
+  { streetId: "ST-4", barangayId: "BRGY-2", streetName: "Bonifacio St." },
+  { streetId: "ST-5", barangayId: "BRGY-1", streetName: "Katipunan Avenue" }
+];
+
+// NEW: addresses (separate from households)
+export const addresses = [
+  { addressId: "A-1", streetId: "ST-1", houseNo: "12A", unitNo: null },
+  { addressId: "A-2", streetId: "ST-2", houseNo: "45", unitNo: null },
+  { addressId: "A-3", streetId: "ST-3", houseNo: "108", unitNo: null },
+  { addressId: "A-4", streetId: "ST-4", houseNo: "33B", unitNo: null },
+  { addressId: "A-5", streetId: "ST-5", houseNo: "201", unitNo: null }
+];
+
+// UPDATED: households now reference addressId, have new types and contact
 export const households = [
   {
-    addressId: "H-1",
-    houseNo: "12A",
-    street: "Rizal Avenue",
-    barangay: "Barangay San Jose",
-    residencyLength: 15, // in years
-    householdType: "Nuclear",
+    householdId: "H-1",
+    addressId: "A-1",
+    householdHeadId: "R-0001",
+    householdType: "House",
+    householdContactNo: "09171234567",
     status: "Active"
   },
   {
-    addressId: "H-2",
-    houseNo: "45",
-    street: "Magsaysay St.",
-    barangay: "Barangay San Jose",
-    residencyLength: 8,
-    householdType: "Extended",
+    householdId: "H-2",
+    addressId: "A-2",
+    householdHeadId: "R-0005",
+    householdType: "House",
+    householdContactNo: "09204445566",
     status: "Active"
   },
   {
-    addressId: "H-3",
-    houseNo: "108",
-    street: "Mabini St.",
-    barangay: "Barangay Santa Isabel",
-    residencyLength: 20,
-    householdType: "Single Parent",
+    householdId: "H-3",
+    addressId: "A-3",
+    householdHeadId: "R-0013",
+    householdType: "Apartment",
+    householdContactNo: "09164448888",
     status: "Active"
   },
   {
-    addressId: "H-4",
-    houseNo: "33B",
-    street: "Bonifacio St.",
-    barangay: "Barangay Santa Isabel",
-    residencyLength: 4,
-    householdType: "Nuclear",
+    householdId: "H-4",
+    addressId: "A-4",
+    householdHeadId: "R-0016",
+    householdType: "House",
+    householdContactNo: "09054443333",
     status: "Active"
   },
   {
-    addressId: "H-5",
-    houseNo: "201",
-    street: "Katipunan Avenue",
-    barangay: "Barangay San Jose",
-    residencyLength: 30,
-    householdType: "Extended",
+    householdId: "H-5",
+    addressId: "A-5",
+    householdHeadId: "R-0020",
+    householdType: "Compound",
+    householdContactNo: "09112223333",
     status: "Active"
   }
 ];
 
+// UPDATED: families — removed hardcoded memberCount and familyHead string
+// familyHead and memberCount are now derived from residents + familyRelations
 export const families = [
-  {
-    familyId: "F-1",
-    addressId: "H-1",
-    familyHead: "Juan Dela Cruz",
-    memberCount: 4,
-    status: "Active"
-  },
-  {
-    familyId: "F-2",
-    addressId: "H-2",
-    familyHead: "Maria Santos",
-    memberCount: 5,
-    status: "Active"
-  },
-  {
-    familyId: "F-3",
-    addressId: "H-2",
-    familyHead: "Cardo Dalisay",
-    memberCount: 3,
-    status: "Active"
-  },
-  {
-    familyId: "F-4",
-    addressId: "H-3",
-    familyHead: "Leonora Aquino",
-    memberCount: 3,
-    status: "Active"
-  },
-  {
-    familyId: "F-5",
-    addressId: "H-4",
-    familyHead: "Rodrigo Marcos",
-    memberCount: 4,
-    status: "Active"
-  },
-  {
-    familyId: "F-6",
-    addressId: "H-5",
-    familyHead: "Teresa Magbanua",
-    memberCount: 6,
-    status: "Active"
-  }
+  { familyId: "F-1", householdId: "H-1", status: "Active" },
+  { familyId: "F-2", householdId: "H-2", status: "Active" },
+  { familyId: "F-3", householdId: "H-2", status: "Active" },
+  { familyId: "F-4", householdId: "H-3", status: "Active" },
+  { familyId: "F-5", householdId: "H-4", status: "Active" },
+  { familyId: "F-6", householdId: "H-5", status: "Active" }
 ];
 
+// UPDATED: residents — split name, removed age (computed), added new fields
 export const residents = [
   // Household 1, Family 1
   {
     residentId: "R-0001",
-    name: "Juan Dela Cruz",
+    firstName: "Juan", middleName: "Santos", lastName: "Dela Cruz",
     birthDate: "1978-05-15",
-    age: 48,
-    sex: "Male",
-    civilStatus: "Married",
-    contactNo: "09171234567",
-    occupation: "Jeepney Driver",
+    sex: "Male", civilStatus: "Married",
+    contactNumber: "09171234567",
+    occupation: "Jeepney Driver", company: "Araneta Cubao Terminal",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-1",
-    familyId: "F-1"
+    residencyStatus: "Active",
+    residencyLengthYears: 15,
+    isDependent: false,
+    householdId: "H-1", familyId: "F-1",
+    parentId: null,
+    emergencyContactName: "Corazon Dela Cruz",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09187654321",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0002",
-    name: "Corazon Dela Cruz",
+    firstName: "Corazon", middleName: "Reyes", lastName: "Dela Cruz",
     birthDate: "1980-11-20",
-    age: 45,
-    sex: "Female",
-    civilStatus: "Married",
-    contactNo: "09187654321",
-    occupation: "Sari-sari Store Owner",
+    sex: "Female", civilStatus: "Married",
+    contactNumber: "09187654321",
+    occupation: "Sari-sari Store Owner", company: "Home-based",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-1",
-    familyId: "F-1"
+    residencyStatus: "Active",
+    residencyLengthYears: 15,
+    isDependent: false,
+    householdId: "H-1", familyId: "F-1",
+    parentId: null,
+    emergencyContactName: "Juan Dela Cruz",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09171234567",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0003",
-    name: "Jose Dela Cruz",
+    firstName: "Jose", middleName: "Santos", lastName: "Dela Cruz",
     birthDate: "2005-08-12",
-    age: 20,
-    sex: "Male",
-    civilStatus: "Single",
-    contactNo: "09192233445",
-    occupation: "College Student",
+    sex: "Male", civilStatus: "Single",
+    contactNumber: "09192233445",
+    occupation: "College Student", company: "PUP Manila",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-1",
-    familyId: "F-1"
+    residencyStatus: "Active",
+    residencyLengthYears: 15,
+    isDependent: true,
+    householdId: "H-1", familyId: "F-1",
+    parentId: "R-0001",
+    emergencyContactName: "Juan Dela Cruz",
+    emergencyContactRelationship: "Father",
+    emergencyContactNumber: "09171234567",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0004",
-    name: "Maria Dela Cruz",
+    firstName: "Maria", middleName: "Santos", lastName: "Dela Cruz",
     birthDate: "2010-02-05",
-    age: 16,
-    sex: "Female",
-    civilStatus: "Single",
-    contactNo: "N/A",
-    occupation: "High School Student",
+    sex: "Female", civilStatus: "Single",
+    contactNumber: "N/A",
+    occupation: "High School Student", company: "San Jose National HS",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-1",
-    familyId: "F-1"
+    residencyStatus: "Active",
+    residencyLengthYears: 15,
+    isDependent: true,
+    householdId: "H-1", familyId: "F-1",
+    parentId: "R-0001",
+    emergencyContactName: "Corazon Dela Cruz",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09187654321",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
 
   // Household 2, Family 2 & Family 3 (Multiple Families in one Household)
   // Family 2
   {
     residentId: "R-0005",
-    name: "Maria Santos",
+    firstName: "Maria", middleName: "Lim", lastName: "Santos",
     birthDate: "1960-09-10",
-    age: 65, // Senior
-    sex: "Female",
-    civilStatus: "Widowed",
-    contactNo: "09204445566",
-    occupation: "Retired Public Teacher",
+    sex: "Female", civilStatus: "Widowed",
+    contactNumber: "09204445566",
+    occupation: "Retired Public Teacher", company: "DepEd (Retired)",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-2"
+    residencyStatus: "Active",
+    residencyLengthYears: 8,
+    isDependent: false,
+    householdId: "H-2", familyId: "F-2",
+    parentId: null,
+    emergencyContactName: "Pedro Santos",
+    emergencyContactRelationship: "Son",
+    emergencyContactNumber: "09159998877",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0006",
-    name: "Pedro Santos",
+    firstName: "Pedro", middleName: "Lim", lastName: "Santos",
     birthDate: "1985-03-30",
-    age: 41,
-    sex: "Male",
-    civilStatus: "Married",
-    contactNo: "09159998877",
-    occupation: "Barangay Kagawad",
+    sex: "Male", civilStatus: "Married",
+    contactNumber: "09159998877",
+    occupation: "Barangay Kagawad", company: "Barangay San Jose LGU",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-2"
+    residencyStatus: "Active",
+    residencyLengthYears: 8,
+    isDependent: false,
+    householdId: "H-2", familyId: "F-2",
+    parentId: "R-0005",
+    emergencyContactName: "Gloria Santos",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09163332211",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0007",
-    name: "Gloria Santos",
+    firstName: "Gloria", middleName: "Tan", lastName: "Santos",
     birthDate: "1988-12-04",
-    age: 37,
-    sex: "Female",
-    civilStatus: "Married",
-    contactNo: "09163332211",
-    occupation: "Nurse",
+    sex: "Female", civilStatus: "Married",
+    contactNumber: "09163332211",
+    occupation: "Nurse", company: "Manila Doctors Hospital",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-2"
+    residencyStatus: "Active",
+    residencyLengthYears: 8,
+    isDependent: false,
+    householdId: "H-2", familyId: "F-2",
+    parentId: null,
+    emergencyContactName: "Pedro Santos",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09159998877",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0008",
-    name: "Joshua Santos",
+    firstName: "Joshua", middleName: "Lim", lastName: "Santos",
     birthDate: "2015-06-18",
-    age: 11,
-    sex: "Male",
-    civilStatus: "Single",
-    contactNo: "N/A",
-    occupation: "Elementary Pupil",
+    sex: "Male", civilStatus: "Single",
+    contactNumber: "N/A",
+    occupation: "Elementary Pupil", company: "San Jose Elem. School",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-2"
+    residencyStatus: "Active",
+    residencyLengthYears: 8,
+    isDependent: true,
+    householdId: "H-2", familyId: "F-2",
+    parentId: "R-0006",
+    emergencyContactName: "Pedro Santos",
+    emergencyContactRelationship: "Father",
+    emergencyContactNumber: "09159998877",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0009",
-    name: "Angel Santos",
+    firstName: "Angel", middleName: "Lim", lastName: "Santos",
     birthDate: "2018-01-22",
-    age: 8,
-    sex: "Female",
-    civilStatus: "Single",
-    contactNo: "N/A",
-    occupation: "Elementary Pupil",
+    sex: "Female", civilStatus: "Single",
+    contactNumber: "N/A",
+    occupation: "Elementary Pupil", company: "San Jose Elem. School",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-2"
+    residencyStatus: "Active",
+    residencyLengthYears: 8,
+    isDependent: true,
+    householdId: "H-2", familyId: "F-2",
+    parentId: "R-0006",
+    emergencyContactName: "Gloria Santos",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09163332211",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   // Family 3 (Tenant / co-living in H-2)
   {
     residentId: "R-0010",
-    name: "Cardo Dalisay",
+    firstName: "Cardo", middleName: "Reyes", lastName: "Dalisay",
     birthDate: "1982-04-14",
-    age: 44,
-    sex: "Male",
-    civilStatus: "Married",
-    contactNo: "09211112222",
-    occupation: "Security Guard",
+    sex: "Male", civilStatus: "Married",
+    contactNumber: "09211112222",
+    occupation: "Security Guard", company: "SecureGuard Agency",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-3"
+    residencyStatus: "Active",
+    residencyLengthYears: 3,
+    isDependent: false,
+    householdId: "H-2", familyId: "F-3",
+    parentId: null,
+    emergencyContactName: "Alyana Dalisay",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09228889999",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0011",
-    name: "Alyana Dalisay",
+    firstName: "Alyana", middleName: "Cruz", lastName: "Dalisay",
     birthDate: "1984-07-19",
-    age: 41,
-    sex: "Female",
-    civilStatus: "Married",
-    contactNo: "09228889999",
-    occupation: "Call Center Agent",
+    sex: "Female", civilStatus: "Married",
+    contactNumber: "09228889999",
+    occupation: "Call Center Agent", company: "Convergys Ortigas",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-3"
+    residencyStatus: "Active",
+    residencyLengthYears: 3,
+    isDependent: false,
+    householdId: "H-2", familyId: "F-3",
+    parentId: null,
+    emergencyContactName: "Cardo Dalisay",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09211112222",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0012",
-    name: "Ricky Boy Dalisay",
+    firstName: "Ricky Boy", middleName: "Reyes", lastName: "Dalisay",
     birthDate: "2013-10-02",
-    age: 12,
-    sex: "Male",
-    civilStatus: "Single",
-    contactNo: "N/A",
-    occupation: "Elementary Pupil",
+    sex: "Male", civilStatus: "Single",
+    contactNumber: "N/A",
+    occupation: "Elementary Pupil", company: "San Jose Elem. School",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-2",
-    familyId: "F-3"
+    residencyStatus: "Active",
+    residencyLengthYears: 3,
+    isDependent: true,
+    householdId: "H-2", familyId: "F-3",
+    parentId: "R-0010",
+    emergencyContactName: "Cardo Dalisay",
+    emergencyContactRelationship: "Father",
+    emergencyContactNumber: "09211112222",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
 
   // Household 3, Family 4
   {
     residentId: "R-0013",
-    name: "Leonora Aquino",
+    firstName: "Leonora", middleName: "Garcia", lastName: "Aquino",
     birthDate: "1955-08-25",
-    age: 70, // Senior
-    sex: "Female",
-    civilStatus: "Widowed",
-    contactNo: "09164448888",
-    occupation: "Retired Cook",
+    sex: "Female", civilStatus: "Widowed",
+    contactNumber: "09164448888",
+    occupation: "Retired Cook", company: "N/A",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-3",
-    familyId: "F-4"
+    residencyStatus: "Active",
+    residencyLengthYears: 20,
+    isDependent: false,
+    householdId: "H-3", familyId: "F-4",
+    parentId: null,
+    emergencyContactName: "Kris Aquino",
+    emergencyContactRelationship: "Daughter",
+    emergencyContactNumber: "09267771111",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0014",
-    name: "Kris Aquino",
+    firstName: "Kris", middleName: "Garcia", lastName: "Aquino",
     birthDate: "1987-02-14",
-    age: 39,
-    sex: "Female",
-    civilStatus: "Single",
-    contactNo: "09267771111",
-    occupation: "Online Seller",
+    sex: "Female", civilStatus: "Single",
+    contactNumber: "09267771111",
+    occupation: "Online Seller", company: "Shopee/Lazada Home-based",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-3",
-    familyId: "F-4"
+    residencyStatus: "Active",
+    residencyLengthYears: 20,
+    isDependent: false,
+    householdId: "H-3", familyId: "F-4",
+    parentId: "R-0013",
+    emergencyContactName: "Leonora Aquino",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09164448888",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0015",
-    name: "Bimby Aquino",
+    firstName: "Bimby", middleName: "Garcia", lastName: "Aquino",
     birthDate: "2007-04-19",
-    age: 19,
-    sex: "Male",
-    civilStatus: "Single",
-    contactNo: "09278882222",
-    occupation: "Senior High Student",
+    sex: "Male", civilStatus: "Single",
+    contactNumber: "09278882222",
+    occupation: "Senior High Student", company: "Sta. Isabel Integrated HS",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-3",
-    familyId: "F-4"
+    residencyStatus: "Active",
+    residencyLengthYears: 19,
+    isDependent: true,
+    householdId: "H-3", familyId: "F-4",
+    parentId: "R-0014",
+    emergencyContactName: "Kris Aquino",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09267771111",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
 
   // Household 4, Family 5
   {
     residentId: "R-0016",
-    name: "Rodrigo Marcos",
+    firstName: "Rodrigo", middleName: "Cruz", lastName: "Marcos",
     birthDate: "1972-09-13",
-    age: 53,
-    sex: "Male",
-    civilStatus: "Married",
-    contactNo: "09054443333",
-    occupation: "Construction Worker",
+    sex: "Male", civilStatus: "Married",
+    contactNumber: "09054443333",
+    occupation: "Construction Worker", company: "Megawide Construction",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-4",
-    familyId: "F-5"
+    residencyStatus: "Active",
+    residencyLengthYears: 4,
+    isDependent: false,
+    householdId: "H-4", familyId: "F-5",
+    parentId: null,
+    emergencyContactName: "Imelda Marcos",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09062221111",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0017",
-    name: "Imelda Marcos",
+    firstName: "Imelda", middleName: "Lopez", lastName: "Marcos",
     birthDate: "1975-07-02",
-    age: 50,
-    sex: "Female",
-    civilStatus: "Married",
-    contactNo: "09062221111",
-    occupation: "Laundry Worker",
+    sex: "Female", civilStatus: "Married",
+    contactNumber: "09062221111",
+    occupation: "Laundry Worker", company: "Self-employed",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-4",
-    familyId: "F-5"
+    residencyStatus: "Active",
+    residencyLengthYears: 4,
+    isDependent: false,
+    householdId: "H-4", familyId: "F-5",
+    parentId: null,
+    emergencyContactName: "Rodrigo Marcos",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09054443333",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0018",
-    name: "Ferdinand Marcos Jr.",
+    firstName: "Ferdinand", middleName: "Cruz", lastName: "Marcos Jr.",
     birthDate: "1999-09-24",
-    age: 26,
-    sex: "Male",
-    civilStatus: "Single",
-    contactNo: "09075556666",
-    occupation: "Tricycle Driver",
+    sex: "Male", civilStatus: "Single",
+    contactNumber: "09075556666",
+    occupation: "Tricycle Driver", company: "Self-employed",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-4",
-    familyId: "F-5"
+    residencyStatus: "Active",
+    residencyLengthYears: 4,
+    isDependent: false,
+    householdId: "H-4", familyId: "F-5",
+    parentId: "R-0016",
+    emergencyContactName: "Rodrigo Marcos",
+    emergencyContactRelationship: "Father",
+    emergencyContactNumber: "09054443333",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0019",
-    name: "Imee Marcos",
+    firstName: "Imee", middleName: "Cruz", lastName: "Marcos",
     birthDate: "2001-11-12",
-    age: 24,
-    sex: "Female",
-    civilStatus: "Single",
-    contactNo: "09087778888",
-    occupation: "Sales Clerk",
+    sex: "Female", civilStatus: "Single",
+    contactNumber: "09087778888",
+    occupation: "Sales Clerk", company: "SM Department Store",
     citizenship: "Filipino",
-    status: "Moved", // Moved Status
-    addressId: "H-4",
-    familyId: "F-5"
+    residencyStatus: "Moved",
+    residencyLengthYears: 3,
+    isDependent: false,
+    householdId: "H-4", familyId: "F-5",
+    parentId: "R-0016",
+    emergencyContactName: "Imelda Marcos",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09062221111",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
 
   // Household 5, Family 6
   {
     residentId: "R-0020",
-    name: "Teresa Magbanua",
+    firstName: "Teresa", middleName: "Silang", lastName: "Magbanua",
     birthDate: "1948-10-13",
-    age: 77, // Senior
-    sex: "Female",
-    civilStatus: "Widowed",
-    contactNo: "09112223333",
-    occupation: "Retired Dressmaker",
+    sex: "Female", civilStatus: "Widowed",
+    contactNumber: "09112223333",
+    occupation: "Retired Dressmaker", company: "N/A",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-5",
-    familyId: "F-6"
+    residencyStatus: "Active",
+    residencyLengthYears: 30,
+    isDependent: false,
+    householdId: "H-5", familyId: "F-6",
+    parentId: null,
+    emergencyContactName: "Emilio Magbanua",
+    emergencyContactRelationship: "Son",
+    emergencyContactNumber: "09123334444",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0021",
-    name: "Emilio Magbanua",
+    firstName: "Emilio", middleName: "Silang", lastName: "Magbanua",
     birthDate: "1970-03-22",
-    age: 56,
-    sex: "Male",
-    civilStatus: "Married",
-    contactNo: "09123334444",
-    occupation: "Barangay Tanod",
+    sex: "Male", civilStatus: "Married",
+    contactNumber: "09123334444",
+    occupation: "Barangay Tanod", company: "Barangay San Jose LGU",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-5",
-    familyId: "F-6"
+    residencyStatus: "Active",
+    residencyLengthYears: 30,
+    isDependent: false,
+    householdId: "H-5", familyId: "F-6",
+    parentId: "R-0020",
+    emergencyContactName: "Gregoria Magbanua",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09134445555",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0022",
-    name: "Gregoria Magbanua",
+    firstName: "Gregoria", middleName: "Reyes", lastName: "Magbanua",
     birthDate: "1974-05-09",
-    age: 52,
-    sex: "Female",
-    civilStatus: "Married",
-    contactNo: "09134445555",
-    occupation: "Housewife",
+    sex: "Female", civilStatus: "Married",
+    contactNumber: "09134445555",
+    occupation: "Housewife", company: "N/A",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-5",
-    familyId: "F-6"
+    residencyStatus: "Active",
+    residencyLengthYears: 25,
+    isDependent: false,
+    householdId: "H-5", familyId: "F-6",
+    parentId: null,
+    emergencyContactName: "Emilio Magbanua",
+    emergencyContactRelationship: "Spouse",
+    emergencyContactNumber: "09123334444",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0023",
-    name: "Andres Magbanua",
+    firstName: "Andres", middleName: "Silang", lastName: "Magbanua",
     birthDate: "1998-11-30",
-    age: 27,
-    sex: "Male",
-    civilStatus: "Single",
-    contactNo: "09145556666",
-    occupation: "IT Support Analyst",
+    sex: "Male", civilStatus: "Single",
+    contactNumber: "09145556666",
+    occupation: "IT Support Analyst", company: "Accenture BGC",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-5",
-    familyId: "F-6"
+    residencyStatus: "Active",
+    residencyLengthYears: 27,
+    isDependent: false,
+    householdId: "H-5", familyId: "F-6",
+    parentId: "R-0021",
+    emergencyContactName: "Emilio Magbanua",
+    emergencyContactRelationship: "Father",
+    emergencyContactNumber: "09123334444",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0024",
-    name: "Melchora Magbanua",
+    firstName: "Melchora", middleName: "Silang", lastName: "Magbanua",
     birthDate: "2001-01-06",
-    age: 25,
-    sex: "Female",
-    civilStatus: "Single",
-    contactNo: "09156667777",
-    occupation: "College Student",
+    sex: "Female", civilStatus: "Single",
+    contactNumber: "09156667777",
+    occupation: "College Student", company: "UP Diliman",
     citizenship: "Filipino",
-    status: "Active",
-    addressId: "H-5",
-    familyId: "F-6"
+    residencyStatus: "Active",
+    residencyLengthYears: 25,
+    isDependent: true,
+    householdId: "H-5", familyId: "F-6",
+    parentId: "R-0021",
+    emergencyContactName: "Gregoria Magbanua",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09134445555",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0025",
-    name: "Gabriela Magbanua",
+    firstName: "Gabriela", middleName: "Silang", lastName: "Magbanua",
     birthDate: "2004-04-20",
-    age: 22,
-    sex: "Female",
-    civilStatus: "Single",
-    contactNo: "09167778888",
-    occupation: "College Student",
+    sex: "Female", civilStatus: "Single",
+    contactNumber: "09167778888",
+    occupation: "College Student", company: "UST Manila",
     citizenship: "Filipino",
-    status: "Inactive", // Inactive Status
-    addressId: "H-5",
-    familyId: "F-6"
+    residencyStatus: "Inactive",
+    residencyLengthYears: 22,
+    isDependent: true,
+    householdId: "H-5", familyId: "F-6",
+    parentId: "R-0021",
+    emergencyContactName: "Emilio Magbanua",
+    emergencyContactRelationship: "Father",
+    emergencyContactNumber: "09123334444",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   },
   {
     residentId: "R-0026",
-    name: "Bonifacio Santos",
+    firstName: "Bonifacio", middleName: "Lim", lastName: "Santos",
     birthDate: "1932-11-30",
-    age: 93,
-    sex: "Male",
-    civilStatus: "Widowed",
-    contactNo: "N/A",
-    occupation: "Deceased",
+    sex: "Male", civilStatus: "Widowed",
+    contactNumber: "N/A",
+    occupation: "N/A", company: "N/A",
     citizenship: "Filipino",
-    status: "Deceased", // Deceased Status
-    addressId: "H-2",
-    familyId: "F-2"
+    residencyStatus: "Deceased",
+    residencyLengthYears: 60,
+    isDependent: false,
+    householdId: "H-2", familyId: "F-2",
+    parentId: null,
+    emergencyContactName: "Maria Santos",
+    emergencyContactRelationship: "Daughter-in-law",
+    emergencyContactNumber: "09204445566",
+    createdBy: "USR-1", createdAt: "2026-01-10",
+    updatedBy: null, updatedAt: null
   }
 ];
 
@@ -515,6 +627,47 @@ export const familyRelations = [
   { familyId: "F-6", residentId: "R-0024", relation: "Granddaughter" },
   { familyId: "F-6", residentId: "R-0025", relation: "Granddaughter" }
 ];
+
+// NEW: residentStatuses — a resident can have multiple statuses
+export const residentStatuses = [
+  { residentStatusId: "RS-1", residentId: "R-0005", statusType: "Senior Citizen", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-2", residentId: "R-0005", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-3", residentId: "R-0013", statusType: "Senior Citizen", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-4", residentId: "R-0013", statusType: "PWD", dateAdded: "2024-01-01", notes: "Mobility impaired — right knee" },
+  { residentStatusId: "RS-5", residentId: "R-0020", statusType: "Senior Citizen", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-6", residentId: "R-0020", statusType: "PWD", dateAdded: "2024-06-15", notes: "Partial hearing loss" },
+  { residentStatusId: "RS-7", residentId: "R-0001", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-8", residentId: "R-0002", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-9", residentId: "R-0006", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-10", residentId: "R-0010", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-11", residentId: "R-0016", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-12", residentId: "R-0017", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-13", residentId: "R-0021", statusType: "Voter", dateAdded: "2024-01-01", notes: null },
+  { residentStatusId: "RS-14", residentId: "R-0014", statusType: "Solo Parent", dateAdded: "2025-03-01", notes: "Single mother of Bimby" },
+  { residentStatusId: "RS-15", residentId: "R-0003", statusType: "Student", dateAdded: "2024-06-01", notes: null },
+  { residentStatusId: "RS-16", residentId: "R-0004", statusType: "Student", dateAdded: "2024-06-01", notes: null },
+  { residentStatusId: "RS-17", residentId: "R-0015", statusType: "Student", dateAdded: "2024-06-01", notes: null },
+  { residentStatusId: "RS-18", residentId: "R-0024", statusType: "Student", dateAdded: "2024-06-01", notes: null },
+  { residentStatusId: "RS-19", residentId: "R-0025", statusType: "Student", dateAdded: "2024-06-01", notes: null },
+  { residentStatusId: "RS-20", residentId: "R-0026", statusType: "Senior Citizen", dateAdded: "2024-01-01", notes: "Deceased" }
+];
+
+// NEW: roles
+export const roles = [
+  { roleId: 1, roleName: "Admin" },
+  { roleId: 2, roleName: "Barangay Official" },
+  { roleId: 3, roleName: "Barangay Staff" }
+];
+
+// NEW: users
+export const users = [
+  { userId: "USR-1", username: "admin", passwordHash: "admin123", fullName: "System Admin", roleId: 1, barangayId: "BRGY-1", isActive: true },
+  { userId: "USR-2", username: "maria.staff", passwordHash: "staff123", fullName: "Maria Clara", roleId: 3, barangayId: "BRGY-1", isActive: true },
+  { userId: "USR-3", username: "pedro.official", passwordHash: "official123", fullName: "Pedro Penduko", roleId: 2, barangayId: "BRGY-2", isActive: true }
+];
+
+// NEW: auditLog — populated by auditLogger utility
+export const auditLog = [];
 
 export const localPrograms = [
   {
@@ -580,3 +733,85 @@ export const generatedReports = [
     type: "pdf"
   }
 ];
+
+// Helper: get display name for a resident
+export function getResidentDisplayName(resident) {
+  if (!resident) return "N/A";
+  const middle = resident.middleName ? ` ${resident.middleName}` : "";
+  return `${resident.lastName}, ${resident.firstName}${middle}`;
+}
+
+// Helper: get short display name (no middle)
+export function getResidentShortName(resident) {
+  if (!resident) return "N/A";
+  return `${resident.lastName}, ${resident.firstName}`;
+}
+
+// Helper: compute age from birthDate
+export function calculateAge(birthDateStr) {
+  if (!birthDateStr) return 0;
+  const today = new Date();
+  const birthDate = new Date(birthDateStr);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// Helper: generate unique ID with prefix
+export function generateId(prefix = "ID") {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+}
+
+// Helper: get address display string for a household
+export function getHouseholdAddress(householdId) {
+  const household = households.find(h => h.householdId === householdId);
+  if (!household) return "N/A";
+  const address = addresses.find(a => a.addressId === household.addressId);
+  if (!address) return "N/A";
+  const street = streets.find(s => s.streetId === address.streetId);
+  if (!street) return address.houseNo;
+  const barangay = barangays.find(b => b.id === street.barangayId);
+  const unitStr = address.unitNo ? ` Unit ${address.unitNo},` : "";
+  return `${address.houseNo}${unitStr} ${street.streetName}`;
+}
+
+// Helper: get full address with barangay
+export function getFullAddress(householdId) {
+  const household = households.find(h => h.householdId === householdId);
+  if (!household) return "N/A";
+  const address = addresses.find(a => a.addressId === household.addressId);
+  if (!address) return "N/A";
+  const street = streets.find(s => s.streetId === address.streetId);
+  if (!street) return address.houseNo;
+  const barangay = barangays.find(b => b.id === street.barangayId);
+  const unitStr = address.unitNo ? ` Unit ${address.unitNo},` : "";
+  return `${address.houseNo}${unitStr} ${street.streetName}, ${barangay?.name || ""}`;
+}
+
+// Helper: get barangay name for a household
+export function getHouseholdBarangay(householdId) {
+  const household = households.find(h => h.householdId === householdId);
+  if (!household) return "N/A";
+  const address = addresses.find(a => a.addressId === household.addressId);
+  if (!address) return "N/A";
+  const street = streets.find(s => s.streetId === address.streetId);
+  if (!street) return "N/A";
+  const barangay = barangays.find(b => b.id === street.barangayId);
+  return barangay?.name || "N/A";
+}
+
+// Helper: get family head name from familyRelations
+export function getFamilyHeadName(familyId) {
+  const headRelation = familyRelations.find(r => r.familyId === familyId && r.relation === "Head");
+  if (!headRelation) return "N/A";
+  const headResident = residents.find(r => r.residentId === headRelation.residentId);
+  return headResident ? getResidentShortName(headResident) : "N/A";
+}
+
+// Helper: get family member count
+export function getFamilyMemberCount(familyId) {
+  return residents.filter(r => r.familyId === familyId).length;
+}
