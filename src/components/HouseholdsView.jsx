@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   households as initialHouseholds,
-  families,
+  families as initialFamilies,
   residents as initialResidents,
   addresses,
   streets,
@@ -13,18 +13,29 @@ import {
 } from "../mockData";
 import { useAuth } from "../context/AuthContext";
 import { logAudit } from "../utils/auditLogger";
+import SearchableSelect from "./SearchableSelect";
 
 export default function HouseholdsView({
   searchQuery,
   selectedHouseholdId,
   setSelectedHouseholdId,
-  residentsList
+  residentsList,
+  setResidentsList
 }) {
   const { currentUser } = useAuth();
   const [householdsList, setHouseholdsList] = useState(initialHouseholds);
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
+  const [familiesList, setFamiliesList] = useState(initialFamilies);
+
+  // Add Family Modal
+  const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);
+  const [addFamilyHouseholdId, setAddFamilyHouseholdId] = useState(null);
+  const [familyFormData, setFamilyFormData] = useState({
+    familyHeadId: "",
+    familyStatus: "Active"
+  });
 
   // Form states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -141,10 +152,55 @@ export default function HouseholdsView({
     alert(`Successfully registered household ${newHouseholdId}!`);
   };
 
+  const handleFamilyFormSubmit = (e) => {
+    e.preventDefault();
+    const newFamilyId = `F-${familiesList.length + 1}`;
+    const newFamily = {
+      familyId: newFamilyId,
+      householdId: addFamilyHouseholdId,
+      familyHeadId: familyFormData.familyHeadId || null,
+      familyStatus: familyFormData.familyStatus
+    };
+
+    initialFamilies.push(newFamily);
+    setFamiliesList([...familiesList, newFamily]);
+
+    // Update resident if family head selected
+    if (familyFormData.familyHeadId) {
+      setResidentsList(prevList => prevList.map(r => {
+        if (r.residentId === familyFormData.familyHeadId) {
+          return { ...r, familyId: newFamilyId, isDependent: false, householdId: addFamilyHouseholdId };
+        }
+        return r;
+      }));
+    }
+
+    logAudit(
+      "families",
+      newFamilyId,
+      "CREATE",
+      currentUser?.userId || "USR-1",
+      `Created family ${newFamilyId} under household ${addFamilyHouseholdId}`
+    );
+
+    setShowAddFamilyModal(false);
+    setFamilyFormData({ familyHeadId: "", familyStatus: "Active" });
+    alert(`Family ${newFamilyId} created! Assign residents to this family when registering them.`);
+  };
+
   const inputClass =
     "border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]";
   const selectClass = `${inputClass} cursor-pointer`;
   const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
+
+  // Prepare resident options for searchable select
+  const residentOptions = [
+    { value: "", label: "None — No head selected" },
+    ...residentsList.filter(r => r.residencyStatus !== "Deceased").map(r => ({
+      value: r.residentId,
+      label: `${r.residentId}: ${getResidentShortName(r)}`
+    }))
+  ];
 
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
@@ -212,7 +268,7 @@ export default function HouseholdsView({
             const barangayName = getHouseholdBarangay(household.householdId);
 
             // Find families living in this household
-            const linkedFamilies = families.filter((f) => f.householdId === household.householdId);
+            const linkedFamilies = familiesList.filter((f) => f.householdId === household.householdId);
 
             // Find all active residents living in this household
             const residentMembers = (residentsList || initialResidents).filter(
@@ -269,15 +325,7 @@ export default function HouseholdsView({
                       <span className="text-[10px] text-slate-400 font-mono">Registry Logged</span>
                     </div>
 
-                    <span
-                      className={
-                        household.status === "Active"
-                          ? "seal-stamped-active"
-                          : "seal-stamped-inactive"
-                      }
-                    >
-                      {household.status}
-                    </span>
+
 
                     <span className="text-slate-400 text-sm font-bold ml-2">
                       {isExpanded ? "▲" : "▼"}
@@ -305,22 +353,36 @@ export default function HouseholdsView({
 
                     {/* Families Breakdown */}
                     <div>
-                      <h4 className="text-xs uppercase font-mono tracking-wider text-slate-500 font-bold mb-3 border-b border-[#D1D7CE]/50 pb-1 flex items-center space-x-2">
-                        <span>👨‍👩‍👧‍👦</span>
-                        <span>Families Unit List ({linkedFamilies.length})</span>
-                      </h4>
+                      <div className="flex items-center justify-between mb-3 border-b border-[#D1D7CE]/50 pb-1">
+                        <h4 className="text-xs uppercase font-mono tracking-wider text-slate-500 font-bold flex items-center space-x-2">
+                          <span>👨‍👩‍👧‍👦</span>
+                          <span>Families Unit List ({linkedFamilies.length})</span>
+                        </h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddFamilyHouseholdId(household.householdId);
+                            setShowAddFamilyModal(true);
+                          }}
+                          className="text-[10px] bg-[#16324A] text-white px-2.5 py-1 rounded-xs font-semibold uppercase tracking-wider hover:bg-[#1f4260] cursor-pointer transition-colors"
+                        >
+                          + Add Family
+                        </button>
+                      </div>
 
                       {linkedFamilies.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {linkedFamilies.map((family) => {
-                            const familyHeadRelation = (
-                              initialResidents || residentsList
-                            ).find(
-                              (r) =>
-                                r.familyId === family.familyId &&
-                                !r.isDependent &&
-                                r.residencyStatus !== "Deceased"
-                            );
+                            const familyHeadRelation = family.familyHeadId
+                              ? (residentsList || initialResidents).find(
+                                  (r) => r.residentId === family.familyHeadId
+                                )
+                              : (residentsList || initialResidents).find(
+                                  (r) =>
+                                    r.familyId === family.familyId &&
+                                    !r.isDependent &&
+                                    r.residencyStatus !== "Deceased"
+                                );
                             const memberCount = (residentsList || initialResidents).filter(
                               (r) => r.familyId === family.familyId && r.residencyStatus !== "Deceased"
                             ).length;
@@ -337,14 +399,14 @@ export default function HouseholdsView({
                                   {/* Update family status chips with Transferred option */}
                                   <span
                                     className={
-                                      family.status === "Active"
+                                      family.familyStatus === "Active"
                                         ? "seal-stamped-active scale-90"
-                                        : family.status === "Transferred"
+                                        : family.familyStatus === "Transferred"
                                         ? "seal-stamped-gold scale-90"
                                         : "seal-stamped-inactive scale-90"
                                     }
                                   >
-                                    {family.status}
+                                    {family.familyStatus}
                                   </span>
                                 </div>
                                 <p className="text-xs text-slate-500">Family Head</p>
@@ -573,21 +635,14 @@ export default function HouseholdsView({
 
                 {/* Household Head */}
                 <div className="col-span-2 flex flex-col">
-                  <label className={labelClass}>Household Head (Linked Resident)</label>
-                  <select
+                  <label className={labelClass}>Household Head (Resident ID)</label>
+                  <SearchableSelect
+                    name="householdHeadId"
                     value={formData.householdHeadId}
                     onChange={(e) => setFormData({ ...formData, householdHeadId: e.target.value })}
-                    className={selectClass}
-                  >
-                    <option value="">Select Resident...</option>
-                    {(residentsList || initialResidents)
-                      .filter((r) => r.residencyStatus !== "Deceased")
-                      .map((r) => (
-                        <option key={r.residentId} value={r.residentId}>
-                          {r.residentId}: {getResidentShortName(r)}
-                        </option>
-                      ))}
-                  </select>
+                    options={residentOptions}
+                    placeholder="Select Household Head..."
+                  />
                 </div>
               </div>
 
@@ -605,6 +660,76 @@ export default function HouseholdsView({
                   className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
                 >
                   Create Registry
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Family Modal */}
+      {showAddFamilyModal && (
+        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
+            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
+                <span>👨‍👩‍👧‍👦</span>
+                <span>Add New Family Unit</span>
+              </h3>
+              <button
+                onClick={() => setShowAddFamilyModal(false)}
+                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleFamilyFormSubmit} className="p-6 space-y-4 font-sans">
+              <div className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs p-3 text-xs text-slate-600">
+                <p className="font-mono font-bold text-[#16324A] mb-1">Household: {addFamilyHouseholdId}</p>
+                <p>A new family unit will be created under this household. You can assign residents to this family when registering or editing them.</p>
+              </div>
+
+              <div className="flex flex-col">
+                <label className={labelClass}>Family Head (Optional)</label>
+                <SearchableSelect
+                  name="familyHeadId"
+                  value={familyFormData.familyHeadId}
+                  onChange={(e) => setFamilyFormData({ ...familyFormData, familyHeadId: e.target.value })}
+                  options={residentOptions.filter(opt => 
+                    opt.value === "" || (residentsList || initialResidents).find(r => r.residentId === opt.value)?.householdId === addFamilyHouseholdId
+                  )}
+                  placeholder="Select Head of Family..."
+                />
+                <p className="text-[10px] text-slate-400 mt-1 font-mono">Only residents in this household are shown.</p>
+              </div>
+
+              <div className="flex flex-col">
+                <label className={labelClass}>Family Status</label>
+                <select
+                  value={familyFormData.familyStatus}
+                  onChange={(e) => setFamilyFormData({ ...familyFormData, familyStatus: e.target.value })}
+                  className={selectClass}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Transferred">Transferred</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddFamilyModal(false)}
+                  className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
+                >
+                  Create Family
                 </button>
               </div>
             </form>

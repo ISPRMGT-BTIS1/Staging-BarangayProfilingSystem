@@ -2,8 +2,11 @@
 // Based on June 29 DB Schema · Barangay Profiling System
 
 export const barangays = [
-  { id: "BRGY-1", name: "Barangay San Jose" },
-  { id: "BRGY-2", name: "Barangay Santa Isabel" }
+  { barangayId: "BRGY-1", barangayName: "Barangay San Jose",  city: "Manila", zoneId: null, isActive: true, createdAt: "2024-01-01",
+    // legacy alias so existing dropdown code still works
+    id: "BRGY-1", name: "Barangay San Jose" },
+  { barangayId: "BRGY-2", barangayName: "Barangay Santa Isabel", city: "Manila", zoneId: null, isActive: true, createdAt: "2024-01-01",
+    id: "BRGY-2", name: "Barangay Santa Isabel" }
 ];
 
 // NEW: streets
@@ -24,7 +27,6 @@ export const addresses = [
   { addressId: "A-5", streetId: "ST-5", houseNo: "201", unitNo: null }
 ];
 
-// UPDATED: households now reference addressId, have new types and contact
 export const households = [
   {
     householdId: "H-1",
@@ -32,7 +34,7 @@ export const households = [
     householdHeadId: "R-0001",
     householdType: "House",
     householdContactNo: "09171234567",
-    status: "Active"
+    createdAt: "2024-01-10"
   },
   {
     householdId: "H-2",
@@ -40,7 +42,7 @@ export const households = [
     householdHeadId: "R-0005",
     householdType: "House",
     householdContactNo: "09204445566",
-    status: "Active"
+    createdAt: "2024-01-10"
   },
   {
     householdId: "H-3",
@@ -48,7 +50,7 @@ export const households = [
     householdHeadId: "R-0013",
     householdType: "Apartment",
     householdContactNo: "09164448888",
-    status: "Active"
+    createdAt: "2024-01-10"
   },
   {
     householdId: "H-4",
@@ -56,7 +58,7 @@ export const households = [
     householdHeadId: "R-0016",
     householdType: "House",
     householdContactNo: "09054443333",
-    status: "Active"
+    createdAt: "2024-01-10"
   },
   {
     householdId: "H-5",
@@ -64,19 +66,18 @@ export const households = [
     householdHeadId: "R-0020",
     householdType: "Compound",
     householdContactNo: "09112223333",
-    status: "Active"
+    createdAt: "2024-01-10"
   }
 ];
 
-// UPDATED: families — removed hardcoded memberCount and familyHead string
-// familyHead and memberCount are now derived from residents + familyRelations
+// families — member_count derived via residents filter, not stored
 export const families = [
-  { familyId: "F-1", householdId: "H-1", status: "Active" },
-  { familyId: "F-2", householdId: "H-2", status: "Active" },
-  { familyId: "F-3", householdId: "H-2", status: "Active" },
-  { familyId: "F-4", householdId: "H-3", status: "Active" },
-  { familyId: "F-5", householdId: "H-4", status: "Active" },
-  { familyId: "F-6", householdId: "H-5", status: "Active" }
+  { familyId: "F-1", householdId: "H-1", familyHeadId: "R-0001", familyStatus: "Active", createdAt: "2024-01-10" },
+  { familyId: "F-2", householdId: "H-2", familyHeadId: "R-0005", familyStatus: "Active", createdAt: "2024-01-10" },
+  { familyId: "F-3", householdId: "H-2", familyHeadId: "R-0010", familyStatus: "Active", createdAt: "2024-01-10" },
+  { familyId: "F-4", householdId: "H-3", familyHeadId: "R-0013", familyStatus: "Active", createdAt: "2024-01-10" },
+  { familyId: "F-5", householdId: "H-4", familyHeadId: "R-0016", familyStatus: "Active", createdAt: "2024-01-10" },
+  { familyId: "F-6", householdId: "H-5", familyHeadId: "R-0020", familyStatus: "Active", createdAt: "2024-01-10" }
 ];
 
 // UPDATED: residents — split name, removed age (computed), added new fields
@@ -91,7 +92,7 @@ export const residents = [
     occupation: "Jeepney Driver", company: "Araneta Cubao Terminal",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 15,
+    residencySince: "2011-05-15",
     isDependent: false,
     householdId: "H-1", familyId: "F-1",
     parentId: null,
@@ -110,7 +111,7 @@ export const residents = [
     occupation: "Sari-sari Store Owner", company: "Home-based",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 15,
+    residencySince: "2011-11-20",
     isDependent: false,
     householdId: "H-1", familyId: "F-1",
     parentId: null,
@@ -129,7 +130,7 @@ export const residents = [
     occupation: "College Student", company: "PUP Manila",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 15,
+    residencySince: "2011-08-12",
     isDependent: true,
     householdId: "H-1", familyId: "F-1",
     parentId: "R-0001",
@@ -148,7 +149,7 @@ export const residents = [
     occupation: "High School Student", company: "San Jose National HS",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 15,
+    residencySince: "2011-02-05",
     isDependent: true,
     householdId: "H-1", familyId: "F-1",
     parentId: "R-0001",
@@ -170,7 +171,7 @@ export const residents = [
     occupation: "Retired Public Teacher", company: "DepEd (Retired)",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 8,
+    residencySince: "2018-09-10",
     isDependent: false,
     householdId: "H-2", familyId: "F-2",
     parentId: null,
@@ -189,7 +190,7 @@ export const residents = [
     occupation: "Barangay Kagawad", company: "Barangay San Jose LGU",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 8,
+    residencySince: "2018-03-30",
     isDependent: false,
     householdId: "H-2", familyId: "F-2",
     parentId: "R-0005",
@@ -208,7 +209,7 @@ export const residents = [
     occupation: "Nurse", company: "Manila Doctors Hospital",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 8,
+    residencySince: "2018-12-04",
     isDependent: false,
     householdId: "H-2", familyId: "F-2",
     parentId: null,
@@ -227,7 +228,7 @@ export const residents = [
     occupation: "Elementary Pupil", company: "San Jose Elem. School",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 8,
+    residencySince: "2018-06-18",
     isDependent: true,
     householdId: "H-2", familyId: "F-2",
     parentId: "R-0006",
@@ -246,7 +247,7 @@ export const residents = [
     occupation: "Elementary Pupil", company: "San Jose Elem. School",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 8,
+    residencySince: "2019-01-22",
     isDependent: true,
     householdId: "H-2", familyId: "F-2",
     parentId: "R-0006",
@@ -266,7 +267,7 @@ export const residents = [
     occupation: "Security Guard", company: "SecureGuard Agency",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 3,
+    residencySince: "2023-04-14",
     isDependent: false,
     householdId: "H-2", familyId: "F-3",
     parentId: null,
@@ -285,7 +286,7 @@ export const residents = [
     occupation: "Call Center Agent", company: "Convergys Ortigas",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 3,
+    residencySince: "2023-07-19",
     isDependent: false,
     householdId: "H-2", familyId: "F-3",
     parentId: null,
@@ -304,7 +305,7 @@ export const residents = [
     occupation: "Elementary Pupil", company: "San Jose Elem. School",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 3,
+    residencySince: "2023-10-02",
     isDependent: true,
     householdId: "H-2", familyId: "F-3",
     parentId: "R-0010",
@@ -325,7 +326,7 @@ export const residents = [
     occupation: "Retired Cook", company: "N/A",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 20,
+    residencySince: "2006-08-25",
     isDependent: false,
     householdId: "H-3", familyId: "F-4",
     parentId: null,
@@ -344,7 +345,7 @@ export const residents = [
     occupation: "Online Seller", company: "Shopee/Lazada Home-based",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 20,
+    residencySince: "2006-02-14",
     isDependent: false,
     householdId: "H-3", familyId: "F-4",
     parentId: "R-0013",
@@ -363,7 +364,7 @@ export const residents = [
     occupation: "Senior High Student", company: "Sta. Isabel Integrated HS",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 19,
+    residencySince: "2007-04-19",
     isDependent: true,
     householdId: "H-3", familyId: "F-4",
     parentId: "R-0014",
@@ -384,7 +385,7 @@ export const residents = [
     occupation: "Construction Worker", company: "Megawide Construction",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 4,
+    residencySince: "2022-09-13",
     isDependent: false,
     householdId: "H-4", familyId: "F-5",
     parentId: null,
@@ -403,7 +404,7 @@ export const residents = [
     occupation: "Laundry Worker", company: "Self-employed",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 4,
+    residencySince: "2022-07-02",
     isDependent: false,
     householdId: "H-4", familyId: "F-5",
     parentId: null,
@@ -422,7 +423,7 @@ export const residents = [
     occupation: "Tricycle Driver", company: "Self-employed",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 4,
+    residencySince: "2022-09-24",
     isDependent: false,
     householdId: "H-4", familyId: "F-5",
     parentId: "R-0016",
@@ -441,7 +442,7 @@ export const residents = [
     occupation: "Sales Clerk", company: "SM Department Store",
     citizenship: "Filipino",
     residencyStatus: "Moved",
-    residencyLengthYears: 3,
+    residencySince: "2023-11-12",
     isDependent: false,
     householdId: "H-4", familyId: "F-5",
     parentId: "R-0016",
@@ -462,7 +463,7 @@ export const residents = [
     occupation: "Retired Dressmaker", company: "N/A",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 30,
+    residencySince: "1996-10-13",
     isDependent: false,
     householdId: "H-5", familyId: "F-6",
     parentId: null,
@@ -481,7 +482,7 @@ export const residents = [
     occupation: "Barangay Tanod", company: "Barangay San Jose LGU",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 30,
+    residencySince: "1996-03-22",
     isDependent: false,
     householdId: "H-5", familyId: "F-6",
     parentId: "R-0020",
@@ -500,7 +501,7 @@ export const residents = [
     occupation: "Housewife", company: "N/A",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 25,
+    residencySince: "2001-05-09",
     isDependent: false,
     householdId: "H-5", familyId: "F-6",
     parentId: null,
@@ -519,7 +520,7 @@ export const residents = [
     occupation: "IT Support Analyst", company: "Accenture BGC",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 27,
+    residencySince: "1999-11-30",
     isDependent: false,
     householdId: "H-5", familyId: "F-6",
     parentId: "R-0021",
@@ -538,7 +539,7 @@ export const residents = [
     occupation: "College Student", company: "UP Diliman",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: 25,
+    residencySince: "2001-01-06",
     isDependent: true,
     householdId: "H-5", familyId: "F-6",
     parentId: "R-0021",
@@ -557,7 +558,7 @@ export const residents = [
     occupation: "College Student", company: "UST Manila",
     citizenship: "Filipino",
     residencyStatus: "Inactive",
-    residencyLengthYears: 22,
+    residencySince: "2004-04-20",
     isDependent: true,
     householdId: "H-5", familyId: "F-6",
     parentId: "R-0021",
@@ -576,7 +577,7 @@ export const residents = [
     occupation: "N/A", company: "N/A",
     citizenship: "Filipino",
     residencyStatus: "Deceased",
-    residencyLengthYears: 60,
+    residencySince: "1966-11-30",
     isDependent: false,
     householdId: "H-2", familyId: "F-2",
     parentId: null,
@@ -588,45 +589,9 @@ export const residents = [
   }
 ];
 
-export const familyRelations = [
-  // Family 1
-  { familyId: "F-1", residentId: "R-0001", relation: "Head" },
-  { familyId: "F-1", residentId: "R-0002", relation: "Spouse" },
-  { familyId: "F-1", residentId: "R-0003", relation: "Son" },
-  { familyId: "F-1", residentId: "R-0004", relation: "Daughter" },
-
-  // Family 2
-  { familyId: "F-2", residentId: "R-0005", relation: "Head" },
-  { familyId: "F-2", residentId: "R-0006", relation: "Son" },
-  { familyId: "F-2", residentId: "R-0007", relation: "Daughter-in-law" },
-  { familyId: "F-2", residentId: "R-0008", relation: "Grandson" },
-  { familyId: "F-2", residentId: "R-0009", relation: "Granddaughter" },
-  { familyId: "F-2", residentId: "R-0026", relation: "Father" }, // Bonifacio (deceased)
-
-  // Family 3
-  { familyId: "F-3", residentId: "R-0010", relation: "Head" },
-  { familyId: "F-3", residentId: "R-0011", relation: "Spouse" },
-  { familyId: "F-3", residentId: "R-0012", relation: "Son" },
-
-  // Family 4
-  { familyId: "F-4", residentId: "R-0013", relation: "Head" },
-  { familyId: "F-4", residentId: "R-0014", relation: "Daughter" },
-  { familyId: "F-4", residentId: "R-0015", relation: "Grandson" },
-
-  // Family 5
-  { familyId: "F-5", residentId: "R-0016", relation: "Head" },
-  { familyId: "F-5", residentId: "R-0017", relation: "Spouse" },
-  { familyId: "F-5", residentId: "R-0018", relation: "Son" },
-  { familyId: "F-5", residentId: "R-0019", relation: "Daughter" },
-
-  // Family 6
-  { familyId: "F-6", residentId: "R-0020", relation: "Head" },
-  { familyId: "F-6", residentId: "R-0021", relation: "Son" },
-  { familyId: "F-6", residentId: "R-0022", relation: "Daughter-in-law" },
-  { familyId: "F-6", residentId: "R-0023", relation: "Grandson" },
-  { familyId: "F-6", residentId: "R-0024", relation: "Granddaughter" },
-  { familyId: "F-6", residentId: "R-0025", relation: "Granddaughter" }
-];
+// familyRelations removed — not in DB schema.
+// Family head is stored as families.familyHeadId (FK to residents)
+// Family members are derived by filtering residents on familyId
 
 // NEW: residentStatuses — a resident can have multiple statuses
 export const residentStatuses = [
@@ -760,6 +725,23 @@ export function calculateAge(birthDateStr) {
   return age;
 }
 
+// Helper: compute residency length string
+export function calculateResidencyLength(residencySinceStr) {
+  if (!residencySinceStr) return "N/A";
+  const today = new Date();
+  const sinceDate = new Date(residencySinceStr);
+  let years = today.getFullYear() - sinceDate.getFullYear();
+  let months = today.getMonth() - sinceDate.getMonth();
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (years === 0 && months === 0) return "< 1 mo";
+  if (years === 0) return `${months} mos`;
+  if (months === 0) return `${years} yrs`;
+  return `${years} yrs ${months} mos`;
+}
+
 // Helper: generate unique ID with prefix
 export function generateId(prefix = "ID") {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
@@ -803,15 +785,19 @@ export function getHouseholdBarangay(householdId) {
   return barangay?.name || "N/A";
 }
 
-// Helper: get family head name from familyRelations
+// Helper: get family head name from families.familyHeadId (matches DB: families.family_head_id FK)
 export function getFamilyHeadName(familyId) {
-  const headRelation = familyRelations.find(r => r.familyId === familyId && r.relation === "Head");
-  if (!headRelation) return "N/A";
-  const headResident = residents.find(r => r.residentId === headRelation.residentId);
+  const family = families.find(f => f.familyId === familyId);
+  if (!family || !family.familyHeadId) {
+    // fallback: find first non-dependent resident in this family
+    const head = residents.find(r => r.familyId === familyId && !r.isDependent && r.residencyStatus !== "Deceased");
+    return head ? getResidentShortName(head) : "N/A";
+  }
+  const headResident = residents.find(r => r.residentId === family.familyHeadId);
   return headResident ? getResidentShortName(headResident) : "N/A";
 }
 
-// Helper: get family member count
+// Helper: get family member count (matches DB: COUNT(resident_id) WHERE family_id = x)
 export function getFamilyMemberCount(familyId) {
   return residents.filter(r => r.familyId === familyId).length;
 }

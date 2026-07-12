@@ -85,6 +85,7 @@ function AuthenticatedApp() {
             selectedHouseholdId={selectedHouseholdId}
             setSelectedHouseholdId={setSelectedHouseholdId}
             residentsList={residentsList}
+            setResidentsList={setResidentsList}
           />
         );
       case "reports":

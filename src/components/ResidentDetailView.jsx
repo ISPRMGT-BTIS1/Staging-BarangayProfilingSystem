@@ -10,6 +10,7 @@ import {
   getResidentDisplayName,
   getResidentShortName,
   calculateAge,
+  calculateResidencyLength,
   getHouseholdAddress,
   getFullAddress,
   getHouseholdBarangay,
@@ -127,7 +128,7 @@ export default function ResidentDetailView({ residentId, onBack }) {
             <div className="w-full border-t border-[#D1D7CE] mt-6 pt-4 space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-400 font-mono uppercase text-[9px]">Length of Residency:</span>
-                <span className="font-semibold">{resident.residencyLengthYears} years</span>
+                <span className="font-semibold">{calculateResidencyLength(resident.residencySince)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400 font-mono uppercase text-[9px]">Citizenship:</span>

@@ -3,12 +3,12 @@ import {
   residents as allResidents,
   households,
   families,
-  familyRelations,
   barangays,
   streets,
   addresses,
   residentStatuses,
   calculateAge,
+  calculateResidencyLength,
   getResidentDisplayName,
   getResidentShortName,
   getHouseholdAddress,
@@ -19,6 +19,8 @@ import {
 } from "../mockData";
 import { useAuth } from "../context/AuthContext";
 import { logAudit } from "../utils/auditLogger";
+import SearchableSelect from "./SearchableSelect";
+import { parseCSVResidents } from "../utils/csvImporter";
 
 const STATUS_TYPES = ["Senior Citizen", "PWD", "Voter", "Student", "Solo Parent", "Indigent", "Other"];
 
@@ -44,6 +46,9 @@ export default function ResidentsView({
   const [sortField, setSortField] = useState("residentId");
   const [sortOrder, setSortOrder] = useState("asc");
 
+  // File input ref for CSV import
+  const fileInputRef = React.useRef(null);
+
   // New profiling form state
   const [formData, setFormData] = useState({
     firstName: "", middleName: "", lastName: "",
@@ -54,14 +59,17 @@ export default function ResidentsView({
     occupation: "", company: "",
     citizenship: "Filipino",
     residencyStatus: "Active",
-    residencyLengthYears: "",
+    residencySince: "",
     isDependent: true,
     householdId: "", familyId: "",
     parentId: "",
     emergencyContactName: "",
     emergencyContactRelationship: "",
     emergencyContactNumber: "",
-    selectedStatuses: []
+    selectedStatuses: [],
+    otherStatusNotes: "",
+    isEditing: false,
+    editResidentId: null
   });
 
   // Cascading dropdown states
@@ -200,11 +208,12 @@ export default function ResidentsView({
       return;
     }
 
-    const newResidentId = `R-${String(residentsList.length + 1).padStart(4, "0")}`;
     const today = new Date().toISOString().split("T")[0];
+    const isEdit = formData.isEditing;
+    const residentId = isEdit ? formData.editResidentId : `R-${String(residentsList.length + 1).padStart(4, "0")}`;
 
-    const newResident = {
-      residentId: newResidentId,
+    const residentData = {
+      residentId,
       firstName: formData.firstName,
       middleName: formData.middleName,
       lastName: formData.lastName,
@@ -216,7 +225,7 @@ export default function ResidentsView({
       company: formData.company || "N/A",
       citizenship: formData.citizenship,
       residencyStatus: formData.residencyStatus,
-      residencyLengthYears: parseFloat(formData.residencyLengthYears) || 0,
+      residencySince: formData.residencySince || today,
       isDependent: formData.isDependent,
       householdId: formData.householdId || "H-1",
       familyId: formData.familyId || "F-1",
@@ -224,28 +233,43 @@ export default function ResidentsView({
       emergencyContactName: formData.emergencyContactName || "",
       emergencyContactRelationship: formData.emergencyContactRelationship || "",
       emergencyContactNumber: formData.emergencyContactNumber || "",
-      createdBy: currentUser?.userId || "USR-1",
-      createdAt: today,
-      updatedBy: null,
-      updatedAt: null
+      createdBy: isEdit ? (residentsList.find(r => r.residentId === residentId)?.createdBy || "USR-1") : (currentUser?.userId || "USR-1"),
+      createdAt: isEdit ? (residentsList.find(r => r.residentId === residentId)?.createdAt || today) : today,
+      updatedBy: isEdit ? (currentUser?.userId || "USR-1") : null,
+      updatedAt: isEdit ? today : null
     };
 
-    setResidentsList([newResident, ...residentsList]);
+    if (isEdit) {
+      setResidentsList(prev => prev.map(r => r.residentId === residentId ? residentData : r));
+    } else {
+      setResidentsList([residentData, ...residentsList]);
+    }
 
     // Push resident statuses
+    // For edit, simply clear old and push new
+    if (isEdit) {
+      const idxToDelete = [];
+      for (let i = residentStatuses.length - 1; i >= 0; i--) {
+        if (residentStatuses[i].residentId === residentId) {
+          idxToDelete.push(i);
+        }
+      }
+      idxToDelete.forEach(idx => residentStatuses.splice(idx, 1));
+    }
+    
     formData.selectedStatuses.forEach(statusType => {
       residentStatuses.push({
         residentStatusId: generateId("RS"),
-        residentId: newResidentId,
+        residentId,
         statusType,
         dateAdded: today,
-        notes: null
+        notes: statusType === "Other" ? formData.otherStatusNotes : null
       });
     });
 
     // Log audit
-    logAudit("residents", newResidentId, "CREATE", currentUser?.userId || "USR-1",
-      `Created resident: ${formData.lastName}, ${formData.firstName}`);
+    logAudit("residents", residentId, isEdit ? "UPDATE" : "CREATE", currentUser?.userId || "USR-1",
+      `${isEdit ? "Updated" : "Created"} resident: ${formData.lastName}, ${formData.firstName}`);
 
     setShowNewProfilingModal(false);
     
@@ -259,24 +283,114 @@ export default function ResidentsView({
       occupation: "", company: "",
       citizenship: "Filipino",
       residencyStatus: "Active",
-      residencyLengthYears: "",
+      residencySince: "",
       isDependent: true,
       householdId: "", familyId: "",
       parentId: "",
       emergencyContactName: "",
       emergencyContactRelationship: "",
       emergencyContactNumber: "",
-      selectedStatuses: []
+      selectedStatuses: [],
+      otherStatusNotes: "",
+      isEditing: false,
+      editResidentId: null
     });
     setSelectedBarangayId("");
     setSelectedStreetId("");
 
-    alert(`Successfully registered resident ${formData.lastName}, ${formData.firstName} under record ${newResidentId}!`);
+    alert(`Successfully ${isEdit ? "updated" : "registered"} resident ${formData.lastName}, ${formData.firstName} under record ${residentId}!`);
+  };
+
+  const openEditModal = (e, resident) => {
+    e.stopPropagation();
+    
+    const h = households.find(h => h.householdId === resident.householdId);
+    let stId = "", brgyId = "";
+    if (h) {
+      const addr = addresses.find(a => a.addressId === h.addressId);
+      if (addr) {
+        stId = addr.streetId;
+        const street = streets.find(s => s.streetId === addr.streetId);
+        if (street) brgyId = street.barangayId;
+      }
+    }
+    
+    setSelectedBarangayId(brgyId);
+    setSelectedStreetId(stId);
+
+    const activeStatuses = residentStatuses
+      .filter(rs => rs.residentId === resident.residentId)
+      .map(rs => rs.statusType);
+      
+    const otherStatus = residentStatuses.find(rs => rs.residentId === resident.residentId && rs.statusType === "Other");
+
+    setFormData({
+      firstName: resident.firstName, middleName: resident.middleName || "", lastName: resident.lastName,
+      birthDate: resident.birthDate,
+      sex: resident.sex,
+      civilStatus: resident.civilStatus,
+      contactNumber: resident.contactNumber !== "N/A" ? resident.contactNumber : "",
+      occupation: resident.occupation !== "Unemployed" ? resident.occupation : "", 
+      company: resident.company !== "N/A" ? resident.company : "",
+      citizenship: resident.citizenship,
+      residencyStatus: resident.residencyStatus,
+      residencySince: resident.residencySince || "",
+      isDependent: resident.isDependent,
+      householdId: resident.householdId, 
+      familyId: resident.familyId,
+      parentId: resident.parentId || "",
+      emergencyContactName: resident.emergencyContactName || "",
+      emergencyContactRelationship: resident.emergencyContactRelationship || "",
+      emergencyContactNumber: resident.emergencyContactNumber || "",
+      selectedStatuses: activeStatuses,
+      otherStatusNotes: otherStatus ? (otherStatus.notes || "") : "",
+      isEditing: true,
+      editResidentId: resident.residentId
+    });
+    setShowNewProfilingModal(true);
   };
 
   const handleHouseholdLink = (householdId) => {
     setSelectedHouseholdId(householdId);
     setActiveTab("households");
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csvContent = event.target.result;
+      const parsed = parseCSVResidents(csvContent);
+      if (parsed.length === 0) {
+        alert("Failed to parse CSV or no valid residents found.");
+        return;
+      }
+      
+      const newResidents = [];
+      const today = new Date().toISOString().split("T")[0];
+      
+      parsed.forEach((res, index) => {
+        const newResidentId = `R-${String(residentsList.length + index + 1).padStart(4, "0")}`;
+        newResidents.push({
+          ...res,
+          residentId: newResidentId,
+          createdBy: currentUser?.userId || "USR-1",
+          createdAt: today,
+          updatedBy: null,
+          updatedAt: null
+        });
+        
+        logAudit("residents", newResidentId, "CREATE", currentUser?.userId || "USR-1",
+          `Imported resident: ${res.lastName}, ${res.firstName}`);
+      });
+
+      setResidentsList([...newResidents, ...residentsList]);
+      alert(`Successfully imported ${newResidents.length} residents.`);
+    };
+    reader.readAsText(file);
+    e.target.value = null; // reset input
   };
 
   // Get status chips for a resident
@@ -292,9 +406,27 @@ export default function ResidentsView({
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* View Header */}
-      <div>
-        <h1 className="text-3xl font-bold font-serif text-[#16324A]">Resident Registry Ledger</h1>
-        <p className="text-sm text-slate-500 font-sans">Official profile log database for verifying residency and program qualifications</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Resident Registry Ledger</h1>
+          <p className="text-sm text-slate-500 font-sans">Official profile log database for verifying residency and program qualifications</p>
+        </div>
+        <div>
+          <input 
+            type="file" 
+            accept=".csv" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            className="hidden" 
+          />
+          <button
+            onClick={() => fileInputRef.current.click()}
+            className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2"
+          >
+            <span>📄</span>
+            <span>Import CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters Control Row */}
@@ -450,7 +582,13 @@ export default function ResidentsView({
                       </td>
 
                       {/* Actions */}
-                      <td className="text-right">
+                      <td className="text-right whitespace-nowrap">
+                        <button
+                          onClick={(e) => openEditModal(e, resident)}
+                          className="mr-2 border border-[#2E5A44] text-[#2E5A44] hover:bg-[#2E5A44] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                        >
+                          Edit
+                        </button>
                         <button
                           onClick={() => onViewResident(resident.residentId)}
                           className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
@@ -482,7 +620,7 @@ export default function ResidentsView({
             <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>📋</span>
-                <span>Resident Registry Profiling Form</span>
+                <span>{formData.isEditing ? "Edit Profiling Record" : "Resident Registry Profiling Form"}</span>
               </h3>
               <button
                 onClick={() => setShowNewProfilingModal(false)}
@@ -599,14 +737,14 @@ export default function ResidentsView({
                         <option value="">Select Family...</option>
                         {filteredFamilies.map(f => (
                           <option key={f.familyId} value={f.familyId}>
-                            {f.familyId}: Head - {getFamilyHeadName(f.familyId)}
+                          {f.familyId}: Head - {getFamilyHeadName(f.familyId)}
                           </option>
                         ))}
                       </select>
                     </div>
                     <div className="flex flex-col">
-                      <label className={labelClass}>Residency Length (years)</label>
-                      <input type="number" name="residencyLengthYears" step="0.5" min="0" value={formData.residencyLengthYears} onChange={handleInputChange} placeholder="e.g. 5.5" className={inputClass} />
+                      <label className={labelClass}>Residency Since (Date)</label>
+                      <input type="date" name="residencySince" value={formData.residencySince} onChange={handleInputChange} className={inputClass} />
                     </div>
                     <div className="flex flex-col justify-end">
                       <label className="flex items-center space-x-2 cursor-pointer">
@@ -618,14 +756,19 @@ export default function ResidentsView({
                     </div>
                     <div className="col-span-2 flex flex-col">
                       <label className={labelClass}>Parent (Linked Resident)</label>
-                      <select name="parentId" value={formData.parentId} onChange={handleInputChange} className={selectClass}>
-                        <option value="">None — No parent link</option>
-                        {residentsList.filter(r => r.residencyStatus !== "Deceased").map(r => (
-                          <option key={r.residentId} value={r.residentId}>
-                            {r.residentId}: {getResidentShortName(r)}
-                          </option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        name="parentId"
+                        value={formData.parentId}
+                        onChange={handleInputChange}
+                        options={[
+                          { value: "", label: "None — No parent link" },
+                          ...residentsList.filter(r => r.residencyStatus !== "Deceased").map(r => ({
+                            value: r.residentId,
+                            label: `${r.residentId}: ${getResidentShortName(r)}`
+                          }))
+                        ]}
+                        placeholder="Search and select parent..."
+                      />
                     </div>
                   </div>
                 )}
@@ -697,6 +840,19 @@ export default function ResidentsView({
                         </button>
                       ))}
                     </div>
+                    {formData.selectedStatuses.includes("Other") && (
+                      <div className="mt-4 pt-3 border-t border-[#D1D7CE]/40">
+                        <label className={labelClass}>Specify Other Status Details</label>
+                        <input
+                          type="text"
+                          name="otherStatusNotes"
+                          value={formData.otherStatusNotes}
+                          onChange={handleInputChange}
+                          placeholder="e.g. Requires regular check-up"
+                          className={inputClass}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
