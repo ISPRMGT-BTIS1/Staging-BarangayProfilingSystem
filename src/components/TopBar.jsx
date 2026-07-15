@@ -18,7 +18,7 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling }) 
             <path d="M3 6h18" />
             <path d="m12 2-9 4h18Z" />
           </svg>
-          <span>Brgy. System</span>
+          <span>ANSELL FAJARDO</span>
         </span>
         <span className="hidden sm:inline-block text-xs uppercase px-2 py-0.5 border border-[#D1D7CE] bg-[#F2F4F1] font-mono rounded text-slate-600 tracking-wider">
           Internal Console
