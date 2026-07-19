@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { CertificateType, CERTIFICATE_TYPE_LABELS } from '../types/certificate.types'
+import ApplicationBarangayClearanceModal from './ApplicationBarangayClearanceModal'
 
 interface CertificateCardProps {
   type: CertificateType
@@ -32,16 +34,54 @@ function CertificateCard({ type, onRequest }: CertificateCardProps) {
 }
 
 export function CertificateList() {
+  const [activeModal, setActiveModal] = useState<CertificateType | null>(null)
+
   const handleRequest = (type: CertificateType) => {
-    // TODO: Open CertificateRequestForm modal for the selected type
-    alert(`Certificate request for "${CERTIFICATE_TYPE_LABELS[type]}" — form will open here.`)
+    setActiveModal(type)
+  }
+
+  const handleClose = () => {
+    setActiveModal(null)
   }
 
   return (
-    <div className="space-y-2">
-      {Object.values(CertificateType).map((type) => (
-        <CertificateCard key={type} type={type} onRequest={handleRequest} />
-      ))}
-    </div>
+    <>
+      <div className="space-y-2">
+        {Object.values(CertificateType).map((type) => (
+          <CertificateCard key={type} type={type} onRequest={handleRequest} />
+        ))}
+      </div>
+
+      {/* ── Modals — one per implemented certificate type ───────────── */}
+      <ApplicationBarangayClearanceModal
+        isOpen={activeModal === CertificateType.APPLICATION_BARANGAY_CLEARANCE}
+        onClose={handleClose}
+      />
+
+      {/* Other types: show a "coming soon" toast for now */}
+      {activeModal !== null &&
+        activeModal !== CertificateType.APPLICATION_BARANGAY_CLEARANCE && (
+          <div className="fixed bottom-6 right-6 z-50 ledger-container px-5 py-3 flex items-center gap-3 shadow-lg animate-in slide-in-from-bottom-2">
+            <svg className="h-4 w-4 text-[#C8932B] fill-none stroke-current flex-shrink-0" viewBox="0 0 24 24" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4m0 4h.01" />
+            </svg>
+            <div>
+              <p className="text-xs font-semibold text-[#16324A]">
+                {CERTIFICATE_TYPE_LABELS[activeModal]}
+              </p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Form not yet implemented — coming soon.
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              className="ml-2 text-slate-400 hover:text-[#16324A] cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        )}
+    </>
   )
 }

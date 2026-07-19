@@ -6,7 +6,7 @@ export default function CertificatesPage() {
       <div>
         <h1 className="text-3xl font-bold font-serif text-[#16324A]">Certificates</h1>
         <p className="text-sm text-slate-500 font-sans mt-1">
-          Request and manage barangay certificate issuances
+          Request, fill, and print barangay certificate documents
         </p>
       </div>
 
@@ -15,9 +15,14 @@ export default function CertificatesPage() {
           <h3 className="text-sm font-serif font-bold text-[#16324A]">
             Available Certificate Types
           </h3>
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider bg-[#F2F4F1] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
-            PDF Generation — Coming Soon
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-[#2E5A44] bg-[rgba(46,90,68,0.06)] border border-[#2E5A44]/30 px-2 py-0.5 rounded-sm uppercase tracking-wider">
+              1 Live
+            </span>
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider bg-[#F2F4F1] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
+              8 Coming Soon
+            </span>
+          </div>
         </div>
 
         <CertificateList />

@@ -10,6 +10,7 @@ import ResidentDetailView from "./components/ResidentDetailView";
 import HouseholdsView from "./components/HouseholdsView";
 import StreetsView from "./components/StreetsView";
 import UsersView from "./components/UsersView";
+import CertificatesPage from "./features/certificates/pages/CertificatesPage";
 import { residents as initialResidents, auditLog, getResidentDisplayName } from "./mockData";
 
 export default function App() {
@@ -88,6 +89,8 @@ function AuthenticatedApp() {
             setResidentsList={setResidentsList}
           />
         );
+      case "certificates":
+        return <CertificatesPage />;
       case "reports":
         return <ReportsView residentsList={residentsList} />;
       case "streets":
