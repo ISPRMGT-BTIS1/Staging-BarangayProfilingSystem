@@ -14,8 +14,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     // Simulate brief delay for realism
-    setTimeout(() => {
-      const result = login(username, password);
+    setTimeout(async () => {
+      const result = await login(username, password);
       if (!result.success) {
         setError(result.error);
       }

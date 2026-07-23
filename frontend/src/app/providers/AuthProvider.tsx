@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react'
-import { users, roles, barangays } from '@/mocks'
+import { roles, barangays } from '@/mocks'
+import { supabase } from '@/services/supabaseService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,15 +33,34 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
-  const login = (username: string, password: string) => {
-    const user = (users as User[]).find(
-      (u) => u.username === username && u.passwordHash === password && u.isActive,
-    )
-    if (user) {
-      setCurrentUser(user)
-      return { success: true }
+  const login = async (username: string, password: string) => {
+    try {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*, roles(role_name), barangays(barangay_name)')
+        .eq('username', username)
+        .eq('password_hash', password)
+        .eq('is_active', true)
+
+      if (error) {
+        console.error('Login error:', error)
+        return { success: false, error: 'System error during login.' }
+      }
+
+      if (users && users.length > 0) {
+        const u = users[0]
+        setCurrentUser({
+          ...u,
+          roleId: u.role_id,
+          barangayId: u.barangay_id
+        } as unknown as User)
+        return { success: true }
+      }
+      return { success: false, error: 'Invalid username or password.' }
+    } catch (err) {
+      console.error(err)
+      return { success: false, error: 'System error during login.' }
     }
-    return { success: false, error: 'Invalid username or password.' }
   }
 
   const logout = () => {
