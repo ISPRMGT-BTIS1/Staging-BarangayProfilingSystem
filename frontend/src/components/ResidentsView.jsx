@@ -21,6 +21,10 @@ export default function ResidentsView({
   const { currentUser } = useAuth();
   const {
     residents,
+    households,
+    families,
+    streets,
+    addresses,
     barangays,
     residentStatuses,
     helpers: {
