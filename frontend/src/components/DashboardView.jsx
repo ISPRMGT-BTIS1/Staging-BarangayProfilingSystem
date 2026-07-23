@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext";
 export default function DashboardView({ onPrintBirthdays, residentsList: initialResidentsList }) {
   const { residents, households, residentStatuses, helpers: { calculateAge, getResidentShortName, localPrograms } } = useData();
   const residentsList = initialResidentsList || residents || [];
+  const currentResidents = residentsList;
 
   // Dynamic stats calculation (excluding deceased for total active residents, but let's see)
   const totalResidentsCount = residentsList.filter(r => r.residencyStatus !== "Deceased").length;
