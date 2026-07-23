@@ -29,7 +29,7 @@ export default function SearchableSelect({
   // Filter options based on search
   const filteredOptions = options.filter((opt) =>
     opt.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    opt.value.toLowerCase().includes(searchTerm.toLowerCase())
+    String(opt.value).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSelect = (val) => {

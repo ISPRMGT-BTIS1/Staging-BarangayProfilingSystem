@@ -94,7 +94,7 @@ export default function ResidentsView({
 
   // Cascading filters
   const filteredStreets = selectedBarangayId
-    ? streets.filter(s => s.barangayId === selectedBarangayId)
+    ? streets.filter(s => String(s.barangayId) === String(selectedBarangayId))
     : [];
 
   const filteredHouseholds = selectedBarangayId
@@ -103,13 +103,13 @@ export default function ResidentsView({
         if (!addr) return false;
         const street = streets.find(s => s.streetId === addr.streetId);
         if (!street) return false;
-        if (selectedStreetId && street.streetId !== selectedStreetId) return false;
-        return street.barangayId === selectedBarangayId;
+        if (selectedStreetId && String(street.streetId) !== String(selectedStreetId)) return false;
+        return String(street.barangayId) === String(selectedBarangayId);
       })
     : households;
 
   const filteredFamilies = formData.householdId
-    ? families.filter(f => f.householdId === formData.householdId)
+    ? families.filter(f => String(f.householdId) === String(formData.householdId))
     : families;
 
   const handleSort = (field) => {
