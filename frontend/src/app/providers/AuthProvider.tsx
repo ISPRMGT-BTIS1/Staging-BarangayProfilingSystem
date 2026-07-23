@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react'
 import { roles, barangays } from '@/mocks'
-import { supabase } from '@/services/supabaseService'
+import { supabase } from '@/utils/supabaseClient'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
