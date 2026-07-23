@@ -1,13 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { residents as mockResidents } from '@/mocks'
+import { useData } from '@/context/DataContext'
 import HouseholdsView from '@/components/HouseholdsView'
 
 export default function HouseholdsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectId = searchParams.get('select') || null
   
-  const [residentsList, setResidentsList] = useState(mockResidents)
+  const { residents } = useData()
+  const [residentsList, setResidentsList] = useState(residents)
+
+  useEffect(() => {
+    setResidentsList(residents)
+  }, [residents])
 
   const handleSetSelectedHouseholdId = (val: string | null) => {
     if (val === null) {

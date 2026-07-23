@@ -51,9 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const u = users[0]
         setCurrentUser({
           ...u,
+          userId: u.user_id,
+          fullName: u.full_name,
+          passwordHash: u.password_hash,
+          isActive: u.is_active,
           roleId: u.role_id,
           barangayId: u.barangay_id
-        } as unknown as User)
+        } as User)
         return { success: true }
       }
       return { success: false, error: 'Invalid username or password.' }
@@ -73,18 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getUserRole = () => {
     if (!currentUser) return null
-    const role = (roles as Array<{ roleId: number; roleName: string }>).find(
-      (r) => r.roleId === currentUser.roleId,
-    )
-    return role?.roleName ?? 'Unknown'
+    return (currentUser as any).roles?.role_name || 'Unknown'
   }
 
   const getUserBarangay = () => {
     if (!currentUser) return null
-    const brgy = (barangays as Array<{ id: number; name: string }>).find(
-      (b) => b.id === currentUser.barangayId,
-    )
-    return brgy?.name ?? 'Unknown'
+    return (currentUser as any).barangays?.barangay_name || 'Unknown'
   }
 
   return (

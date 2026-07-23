@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { residents as mockResidents } from '@/mocks'
+import { useData } from '@/context/DataContext'
 import ResidentsView from '@/components/ResidentsView'
 
 export default function ResidentsPage() {
@@ -11,7 +11,13 @@ export default function ResidentsPage() {
   const isNew = searchParams.get('new') === 'true'
   
   const [showNewProfilingModal, setShowNewProfilingModal] = useState(false)
-  const [residentsList, setResidentsList] = useState(mockResidents)
+  const { residents } = useData()
+  const [residentsList, setResidentsList] = useState(residents)
+
+  // Keep residentsList synced if Context data updates (e.g. initial fetch)
+  useEffect(() => {
+    setResidentsList(residents)
+  }, [residents])
 
   // Sync the `new` search parameter with modal state
   useEffect(() => {
