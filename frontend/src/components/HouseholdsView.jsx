@@ -3,6 +3,7 @@ import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import SearchableSelect from "./SearchableSelect";
+import { supabase } from "../utils/supabaseClient";
 
 export default function HouseholdsView({
   searchQuery,
@@ -12,7 +13,7 @@ export default function HouseholdsView({
   setResidentsList
 }) {
   const { currentUser } = useAuth();
-  const { residents, households, families, addresses, streets, barangays, helpers: { getResidentShortName, getHouseholdAddress, getHouseholdBarangay, generateId } } = useData();
+  const { residents, households, families, addresses, streets, barangays, helpers: { getResidentShortName, getHouseholdAddress, getHouseholdBarangay, generateId }, refetch } = useData();
 
   const residentsList = initialResidentsList || residents || [];
 
@@ -96,95 +97,136 @@ export default function HouseholdsView({
     return matchesSearch && matchesBarangay && matchesType;
   });
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!formData.barangayId || !formData.streetId || !formData.houseNo) {
       alert("Please select Barangay, Street, and enter House Number.");
       return;
     }
 
-    const newAddressId = generateId("A");
-    const newHouseholdId = `H-${householdsList.length + 1}`;
+    try {
+      // 1. Insert Address
+      const { data: addressData, error: addressError } = await supabase
+        .from('addresses')
+        .insert([{
+          street_id: parseInt(String(formData.streetId).replace(/\D/g, ''), 10),
+          house_no: formData.houseNo,
+          unit_no: formData.unitNo || null
+        }])
+        .select('address_id')
+        .single();
 
-    // Add to addresses mock array
-    addresses.push({
-      addressId: newAddressId,
-      streetId: formData.streetId,
-      houseNo: formData.houseNo,
-      unitNo: formData.unitNo || null
-    });
+      if (addressError) {
+        if (addressError.code === '23505') { // Unique violation
+          alert("This address already exists for this street.");
+        } else {
+          throw addressError;
+        }
+        return;
+      }
 
-    const newHousehold = {
-      householdId: newHouseholdId,
-      addressId: newAddressId,
-      householdHeadId: formData.householdHeadId || null,
-      householdType: formData.householdType,
-      householdContactNo: formData.householdContactNo || "N/A",
-      status: "Active"
-    };
+      const newAddressId = addressData.address_id;
 
-    // Update state & mock Data source
-    initialHouseholds.push(newHousehold);
-    setHouseholdsList([...householdsList, newHousehold]);
+      // 2. Insert Household
+      const { data: hhData, error: hhError } = await supabase
+        .from('households')
+        .insert([{
+          address_id: newAddressId,
+          household_head_id: formData.householdHeadId ? parseInt(String(formData.householdHeadId).replace(/\D/g, ''), 10) : null,
+          household_type: formData.householdType || 'House',
+          household_contact_no: formData.householdContactNo || null
+        }])
+        .select('household_id')
+        .single();
 
-    // Log Audit
-    logAudit(
-      "households",
-      newHouseholdId,
-      "CREATE",
-      currentUser?.userId || "USR-1",
-      `Created household with address ID: ${newAddressId}`
-    );
+      if (hhError) throw hhError;
 
-    setShowAddModal(false);
-    // Reset Form
-    setFormData({
-      barangayId: "",
-      streetId: "",
-      houseNo: "",
-      unitNo: "",
-      householdType: "House",
-      householdContactNo: "",
-      householdHeadId: ""
-    });
+      const newHouseholdId = hhData.household_id;
 
-    alert(`Successfully registered household ${newHouseholdId}!`);
+      // Log Audit
+      await logAudit(
+        "households",
+        newHouseholdId,
+        "CREATE",
+        currentUser?.userId || null,
+        `Created household with address ID: ${newAddressId}`
+      );
+
+      setShowAddModal(false);
+      
+      // Reset Form
+      setFormData({
+        barangayId: "",
+        streetId: "",
+        houseNo: "",
+        unitNo: "",
+        householdType: "House",
+        householdContactNo: "",
+        householdHeadId: ""
+      });
+
+      alert(`Successfully registered household ID ${newHouseholdId}!`);
+      
+      if (refetch) refetch();
+
+    } catch (err) {
+      console.error("Error creating household:", err);
+      alert("Failed to create household in database.");
+    }
   };
 
-  const handleFamilyFormSubmit = (e) => {
+  const handleFamilyFormSubmit = async (e) => {
     e.preventDefault();
-    const newFamilyId = `F-${familiesList.length + 1}`;
-    const newFamily = {
-      familyId: newFamilyId,
-      householdId: addFamilyHouseholdId,
-      familyHeadId: familyFormData.familyHeadId || null,
-      familyStatus: familyFormData.familyStatus
-    };
+    
+    try {
+      const familyHeadId = familyFormData.familyHeadId ? parseInt(String(familyFormData.familyHeadId).replace(/\D/g, ''), 10) : null;
+      
+      const { data: familyData, error: familyError } = await supabase
+        .from('families')
+        .insert([{
+          household_id: addFamilyHouseholdId,
+          family_head_id: familyHeadId,
+          family_status: familyFormData.familyStatus
+        }])
+        .select('family_id')
+        .single();
+        
+      if (familyError) throw familyError;
+      
+      const newFamilyId = familyData.family_id;
 
-    initialFamilies.push(newFamily);
-    setFamiliesList([...familiesList, newFamily]);
+      // Update resident if family head selected
+      if (familyHeadId) {
+        const { error: resError } = await supabase
+          .from('residents')
+          .update({
+            family_id: newFamilyId,
+            is_dependent: false,
+            household_id: addFamilyHouseholdId
+          })
+          .eq('resident_id', familyHeadId);
+          
+        if (resError) throw resError;
+      }
 
-    // Update resident if family head selected
-    if (familyFormData.familyHeadId) {
-      setResidentsList(prevList => prevList.map(r => {
-        if (r.residentId === familyFormData.familyHeadId) {
-          return { ...r, familyId: newFamilyId, isDependent: false, householdId: addFamilyHouseholdId };
-        }
-        return r;
-      }));
+      await logAudit(
+        "families",
+        newFamilyId,
+        "CREATE",
+        currentUser?.userId || null,
+        `Created family ID ${newFamilyId} under household ${addFamilyHouseholdId}`
+      );
+
+      setShowAddFamilyModal(false);
+      setFamilyFormData({ familyHeadId: "", familyStatus: "Active" });
+      alert(`Family ${newFamilyId} created! Assign residents to this family when registering them.`);
+      
+      if (refetch) refetch();
+      
+    } catch (err) {
+      console.error("Error creating family:", err);
+      alert("Failed to create family in database.");
     }
-
-    logAudit(
-      "families",
-      newFamilyId,
-      "CREATE",
-      currentUser?.userId || "USR-1",
-      `Created family ${newFamilyId} under household ${addFamilyHouseholdId}`
-    );
-
-    setShowAddFamilyModal(false);
-    setFamilyFormData({ familyHeadId: "", familyStatus: "Active" });
-    alert(`Family ${newFamilyId} created! Assign residents to this family when registering them.`);
   };
 
   const inputClass =

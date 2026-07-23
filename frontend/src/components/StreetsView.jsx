@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
+import { supabase } from "../utils/supabaseClient";
 
 export default function StreetsView() {
   const { currentUser } = useAuth();
-  const { streets, barangays, helpers: { generateId } } = useData();
+  const { streets, barangays, helpers: { generateId }, refetch } = useData();
   const [streetsList, setStreetsList] = useState([]);
 
   React.useEffect(() => {
@@ -16,55 +17,73 @@ export default function StreetsView() {
   const [newStreetName, setNewStreetName] = useState("");
   const [newBarangayId, setNewBarangayId] = useState("");
 
-  const handleAddStreet = (e) => {
+  const handleAddStreet = async (e) => {
     e.preventDefault();
     if (!newStreetName || !newBarangayId) {
       alert("Please fill in all fields.");
       return;
     }
 
-    const newStreetId = `ST-${streetsList.length + 1}`;
-    const newStreet = {
-      streetId: newStreetId,
-      barangayId: newBarangayId,
-      streetName: newStreetName
-    };
-
-    initialStreets.push(newStreet);
-    setStreetsList([...streetsList, newStreet]);
-
-    // Log Audit
-    logAudit(
-      "streets",
-      newStreetId,
-      "CREATE",
-      currentUser?.userId || "USR-1",
-      `Created street: ${newStreetName} under Barangay ${newBarangayId}`
-    );
-
-    setShowAddModal(false);
-    setNewStreetName("");
-    setNewBarangayId("");
-    alert(`Successfully added street "${newStreetName}"!`);
-  };
-
-  const handleDeleteStreet = (streetId, name) => {
-    if (confirm(`Are you sure you want to delete street "${name}"?`)) {
-      const updated = streetsList.filter(s => s.streetId !== streetId);
-      // Update mock array in-place
-      const idx = initialStreets.findIndex(s => s.streetId === streetId);
-      if (idx !== -1) initialStreets.splice(idx, 1);
+    try {
+      const { data, error } = await supabase
+        .from('streets')
+        .insert([{
+          barangay_id: parseInt(String(newBarangayId).replace(/\D/g, ''), 10),
+          street_name: newStreetName
+        }])
+        .select('street_id')
+        .single();
+        
+      if (error) throw error;
       
-      setStreetsList(updated);
+      const newStreetId = data.street_id;
 
       // Log Audit
-      logAudit(
+      await logAudit(
         "streets",
-        streetId,
-        "DELETE",
-        currentUser?.userId || "USR-1",
-        `Deleted street: ${name}`
+        newStreetId,
+        "CREATE",
+        currentUser?.userId || null,
+        `Created street: ${newStreetName} under Barangay ${newBarangayId}`
       );
+
+      setShowAddModal(false);
+      setNewStreetName("");
+      setNewBarangayId("");
+      alert(`Successfully added street "${newStreetName}"!`);
+      
+      if (refetch) refetch();
+      
+    } catch (err) {
+      console.error("Error creating street:", err);
+      alert("Failed to add street to database.");
+    }
+  };
+
+  const handleDeleteStreet = async (streetId, name) => {
+    if (confirm(`Are you sure you want to delete street "${name}"?`)) {
+      try {
+        const { error } = await supabase
+          .from('streets')
+          .delete()
+          .eq('street_id', streetId);
+          
+        if (error) throw error;
+
+        await logAudit(
+          "streets",
+          streetId,
+          "DELETE",
+          currentUser?.userId || null,
+          `Deleted street: ${name}`
+        );
+        
+        if (refetch) refetch();
+        
+      } catch (err) {
+        console.error("Error deleting street:", err);
+        alert("Failed to delete street from database. It might be in use.");
+      }
     }
   };
 

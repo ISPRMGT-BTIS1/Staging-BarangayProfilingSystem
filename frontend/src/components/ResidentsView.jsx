@@ -4,6 +4,7 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import SearchableSelect from "./SearchableSelect";
 import { parseCSVResidents } from "../utils/csvImporter";
+import { supabase } from "../utils/supabaseClient";
 
 const STATUS_TYPES = ["Senior Citizen", "PWD", "Voter", "Student", "Solo Parent", "Indigent", "Other"];
 
@@ -37,7 +38,8 @@ export default function ResidentsView({
       getFamilyHeadName,
       getFamilyMemberCount,
       generateId
-    }
+    },
+    refetch
   } = useData();
 
   const residentsList = initialResidentsList || residents || [];
@@ -206,104 +208,123 @@ export default function ResidentsView({
     setFormData(prev => ({ ...prev, householdId: "", familyId: "" }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!formData.firstName || !formData.lastName || !formData.birthDate) {
       alert("Please fill in all required fields (First Name, Last Name, and Birth Date).");
       return;
     }
+    
+    // Basic validation for foreign keys
+    if (!formData.householdId || !formData.familyId) {
+      alert("Household ID and Family ID are required.");
+      return;
+    }
 
-    const today = new Date().toISOString().split("T")[0];
     const isEdit = formData.isEditing;
-    const residentId = isEdit ? formData.editResidentId : `R-${String(residentsList.length + 1).padStart(4, "0")}`;
-
-    const residentData = {
-      residentId,
-      firstName: formData.firstName,
-      middleName: formData.middleName,
-      lastName: formData.lastName,
-      birthDate: formData.birthDate,
+    
+    const dbPayload = {
+      first_name: formData.firstName,
+      middle_name: formData.middleName,
+      last_name: formData.lastName,
+      birth_date: formData.birthDate,
       sex: formData.sex,
-      civilStatus: formData.civilStatus,
-      contactNumber: formData.contactNumber || "N/A",
-      occupation: formData.occupation || "Unemployed",
-      company: formData.company || "N/A",
-      citizenship: formData.citizenship,
-      residencyStatus: formData.residencyStatus,
-      residencySince: formData.residencySince || today,
-      isDependent: formData.isDependent,
-      householdId: formData.householdId || "H-1",
-      familyId: formData.familyId || "F-1",
-      parentId: formData.parentId || null,
-      emergencyContactName: formData.emergencyContactName || "",
-      emergencyContactRelationship: formData.emergencyContactRelationship || "",
-      emergencyContactNumber: formData.emergencyContactNumber || "",
-      createdBy: isEdit ? (residentsList.find(r => r.residentId === residentId)?.createdBy || "USR-1") : (currentUser?.userId || "USR-1"),
-      createdAt: isEdit ? (residentsList.find(r => r.residentId === residentId)?.createdAt || today) : today,
-      updatedBy: isEdit ? (currentUser?.userId || "USR-1") : null,
-      updatedAt: isEdit ? today : null
+      civil_status: formData.civilStatus,
+      contact_number: formData.contactNumber || null,
+      occupation: formData.occupation || null,
+      company: formData.company || null,
+      citizenship: formData.citizenship || "Filipino",
+      residency_status: formData.residencyStatus,
+      residency_length_years: formData.residencySince ? parseFloat(formData.residencySince) : null, // NOTE: residencySince needs to be numeric in form or DB schema change, assuming null for now. 
+      is_dependent: formData.isDependent,
+      household_id: parseInt(String(formData.householdId).replace(/\D/g, ''), 10) || null,
+      family_id: parseInt(String(formData.familyId).replace(/\D/g, ''), 10) || null,
+      parent_id: formData.parentId ? parseInt(String(formData.parentId).replace(/\D/g, ''), 10) : null,
+      emergency_contact_name: formData.emergencyContactName || null,
+      emergency_contact_relationship: formData.emergencyContactRelationship || null,
+      emergency_contact_number: formData.emergencyContactNumber || null,
     };
 
-    if (isEdit) {
-      setResidentsList(prev => prev.map(r => r.residentId === residentId ? residentData : r));
-    } else {
-      setResidentsList([residentData, ...residentsList]);
-    }
+    try {
+      let residentId = null;
 
-    // Push resident statuses
-    // For edit, simply clear old and push new
-    if (isEdit) {
-      const idxToDelete = [];
-      for (let i = residentStatuses.length - 1; i >= 0; i--) {
-        if (residentStatuses[i].residentId === residentId) {
-          idxToDelete.push(i);
-        }
+      if (isEdit) {
+        residentId = formData.editResidentId;
+        dbPayload.updated_by = currentUser?.userId || null;
+        
+        const { error } = await supabase
+          .from('residents')
+          .update(dbPayload)
+          .eq('resident_id', residentId);
+          
+        if (error) throw error;
+        
+        // Update statuses by deleting old and inserting new
+        await supabase.from('resident_statuses').delete().eq('resident_id', residentId);
+      } else {
+        dbPayload.created_by = currentUser?.userId || null;
+        
+        const { data: newResident, error } = await supabase
+          .from('residents')
+          .insert([dbPayload])
+          .select('resident_id')
+          .single();
+          
+        if (error) throw error;
+        residentId = newResident.resident_id;
       }
-      idxToDelete.forEach(idx => residentStatuses.splice(idx, 1));
-    }
-    
-    formData.selectedStatuses.forEach(statusType => {
-      residentStatuses.push({
-        residentStatusId: generateId("RS"),
-        residentId,
-        statusType,
-        dateAdded: today,
-        notes: statusType === "Other" ? formData.otherStatusNotes : null
+
+      // Insert statuses
+      if (formData.selectedStatuses.length > 0) {
+        const statusesPayload = formData.selectedStatuses.map(statusType => ({
+          resident_id: residentId,
+          status_type: statusType,
+          notes: statusType === "Other" ? formData.otherStatusNotes : null
+        }));
+        const { error: statusError } = await supabase.from('resident_statuses').insert(statusesPayload);
+        if (statusError) throw statusError;
+      }
+
+      // Log audit
+      await logAudit("residents", residentId, isEdit ? "UPDATE" : "CREATE", currentUser?.userId || null,
+        `${isEdit ? "Updated" : "Created"} resident: ${formData.lastName}, ${formData.firstName}`);
+
+      alert(`Successfully ${isEdit ? "updated" : "registered"} resident ${formData.lastName}, ${formData.firstName}!`);
+      
+      setShowNewProfilingModal(false);
+      
+      // Reset form
+      setFormData({
+        firstName: "", middleName: "", lastName: "",
+        birthDate: "",
+        sex: "Male",
+        civilStatus: "Single",
+        contactNumber: "",
+        occupation: "", company: "",
+        citizenship: "Filipino",
+        residencyStatus: "Active",
+        residencySince: "",
+        isDependent: true,
+        householdId: "", familyId: "",
+        parentId: "",
+        emergencyContactName: "",
+        emergencyContactRelationship: "",
+        emergencyContactNumber: "",
+        selectedStatuses: [],
+        otherStatusNotes: "",
+        isEditing: false,
+        editResidentId: null
       });
-    });
-
-    // Log audit
-    logAudit("residents", residentId, isEdit ? "UPDATE" : "CREATE", currentUser?.userId || "USR-1",
-      `${isEdit ? "Updated" : "Created"} resident: ${formData.lastName}, ${formData.firstName}`);
-
-    setShowNewProfilingModal(false);
-    
-    // Reset form
-    setFormData({
-      firstName: "", middleName: "", lastName: "",
-      birthDate: "",
-      sex: "Male",
-      civilStatus: "Single",
-      contactNumber: "",
-      occupation: "", company: "",
-      citizenship: "Filipino",
-      residencyStatus: "Active",
-      residencySince: "",
-      isDependent: true,
-      householdId: "", familyId: "",
-      parentId: "",
-      emergencyContactName: "",
-      emergencyContactRelationship: "",
-      emergencyContactNumber: "",
-      selectedStatuses: [],
-      otherStatusNotes: "",
-      isEditing: false,
-      editResidentId: null
-    });
-    setSelectedBarangayId("");
-    setSelectedStreetId("");
-
-    alert(`Successfully ${isEdit ? "updated" : "registered"} resident ${formData.lastName}, ${formData.firstName} under record ${residentId}!`);
+      setSelectedBarangayId("");
+      setSelectedStreetId("");
+      
+      // Refresh context data
+      if (refetch) refetch();
+      
+    } catch (err) {
+      console.error("Database operation failed:", err);
+      alert("Failed to save resident to database. See console for details.");
+    }
   };
 
   const openEditModal = (e, resident) => {
@@ -365,7 +386,7 @@ export default function ResidentsView({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const csvContent = event.target.result;
       const parsed = parseCSVResidents(csvContent);
       if (parsed.length === 0) {
@@ -373,26 +394,46 @@ export default function ResidentsView({
         return;
       }
       
-      const newResidents = [];
-      const today = new Date().toISOString().split("T")[0];
-      
-      parsed.forEach((res, index) => {
-        const newResidentId = `R-${String(residentsList.length + index + 1).padStart(4, "0")}`;
-        newResidents.push({
-          ...res,
-          residentId: newResidentId,
-          createdBy: currentUser?.userId || "USR-1",
-          createdAt: today,
-          updatedBy: null,
-          updatedAt: null
-        });
+      try {
+        const insertPayloads = parsed.map(res => ({
+          first_name: res.firstName,
+          middle_name: res.middleName,
+          last_name: res.lastName,
+          birth_date: res.birthDate,
+          sex: res.sex,
+          civil_status: res.civilStatus,
+          contact_number: res.contactNumber,
+          occupation: res.occupation,
+          company: res.company,
+          citizenship: res.citizenship || 'Filipino',
+          residency_status: res.residencyStatus || 'Active',
+          residency_length_years: res.residencySince ? parseFloat(res.residencySince) : null,
+          is_dependent: res.isDependent ?? true,
+          household_id: parseInt(String(res.householdId).replace(/\D/g, ''), 10) || null,
+          family_id: parseInt(String(res.familyId).replace(/\D/g, ''), 10) || null,
+          parent_id: res.parentId ? parseInt(String(res.parentId).replace(/\D/g, ''), 10) : null,
+          emergency_contact_name: res.emergencyContactName,
+          emergency_contact_relationship: res.emergencyContactRelationship,
+          emergency_contact_number: res.emergencyContactNumber,
+          created_by: currentUser?.userId || null
+        }));
         
-        logAudit("residents", newResidentId, "CREATE", currentUser?.userId || "USR-1",
-          `Imported resident: ${res.lastName}, ${res.firstName}`);
-      });
-
-      setResidentsList([...newResidents, ...residentsList]);
-      alert(`Successfully imported ${newResidents.length} residents.`);
+        const { data, error } = await supabase.from('residents').insert(insertPayloads).select('resident_id');
+        
+        if (error) throw error;
+        
+        const insertedIds = data.map(r => r.resident_id);
+        
+        // Batch audit logging could be done here, or single log for import
+        await logAudit("residents", insertedIds[0] || 0, "CREATE", currentUser?.userId || null, `Imported ${insertedIds.length} residents from CSV`);
+        
+        alert(`Successfully imported ${insertedIds.length} residents.`);
+        if (refetch) refetch();
+        
+      } catch (err) {
+        console.error("CSV import failed:", err);
+        alert("Failed to import CSV to database. See console for details.");
+      }
     };
     reader.readAsText(file);
     e.target.value = null; // reset input

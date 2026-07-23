@@ -17,131 +17,131 @@ export function DataProvider({ children }) {
     loading: true
   });
 
-  useEffect(() => {
-    async function fetchAllData() {
-      console.log('Fetching live data from Supabase...');
-      try {
-        const [
-          { data: resData },
-          { data: brgyData },
-          { data: streetData },
-          { data: addrData },
-          { data: hhData },
-          { data: famData },
-          { data: userData },
-          { data: roleData },
-          { data: auditData },
-          { data: statusesData }
-        ] = await Promise.all([
-          supabase.from('residents').select('*'),
-          supabase.from('barangays').select('*'),
-          supabase.from('streets').select('*'),
-          supabase.from('addresses').select('*'),
-          supabase.from('households').select('*'),
-          supabase.from('families').select('*'),
-          supabase.from('users').select('*'),
-          supabase.from('roles').select('*'),
-          supabase.from('audit_log').select('*').order('performed_at', { ascending: false }),
-          supabase.from('resident_statuses').select('*')
-        ]);
+  const fetchAllData = async () => {
+    console.log('Fetching live data from Supabase...');
+    try {
+      const [
+        { data: resData },
+        { data: brgyData },
+        { data: streetData },
+        { data: addrData },
+        { data: hhData },
+        { data: famData },
+        { data: userData },
+        { data: roleData },
+        { data: auditData },
+        { data: statusesData }
+      ] = await Promise.all([
+        supabase.from('residents').select('*'),
+        supabase.from('barangays').select('*'),
+        supabase.from('streets').select('*'),
+        supabase.from('addresses').select('*'),
+        supabase.from('households').select('*'),
+        supabase.from('families').select('*'),
+        supabase.from('users').select('*'),
+        supabase.from('roles').select('*'),
+        supabase.from('audit_log').select('*').order('performed_at', { ascending: false }),
+        supabase.from('resident_statuses').select('*')
+      ]);
 
-        setData({
-          residents: (resData || []).map(r => ({
-            residentId: r.resident_id,
-            householdId: r.household_id,
-            familyId: r.family_id,
-            parentId: r.parent_id,
-            firstName: r.first_name,
-            lastName: r.last_name,
-            middleName: r.middle_name,
-            extensionName: r.extension_name,
-            birthDate: r.birth_date,
-            sex: r.sex,
-            civilStatus: r.civil_status,
-            citizenship: r.citizenship,
-            occupation: r.occupation,
-            company: r.company,
-            bloodType: r.blood_type,
-            religion: r.religion,
-            contactNumber: r.contact_number,
-            email: r.email,
-            residencyStatus: r.residency_status,
-            residencyLengthYears: r.residency_length_years,
-            isDependent: r.is_dependent,
-            emergencyContactName: r.emergency_contact_name,
-            emergencyContactRelationship: r.emergency_contact_relationship,
-            emergencyContactNumber: r.emergency_contact_number,
-            isActive: r.is_active,
-            createdAt: r.created_at
-          })),
-          barangays: (brgyData || []).map(b => ({
-            id: b.barangay_id,
-            name: b.barangay_name,
-            barangayId: b.barangay_id,
-            barangayName: b.barangay_name,
-            city: b.city,
-            isActive: b.is_active
-          })),
-          streets: (streetData || []).map(s => ({
-            streetId: s.street_id,
-            barangayId: s.barangay_id,
-            streetName: s.street_name
-          })),
-          addresses: (addrData || []).map(a => ({
-            addressId: a.address_id,
-            streetId: a.street_id,
-            houseNo: a.house_no,
-            unitNo: a.unit_no
-          })),
-          households: (hhData || []).map(h => ({
-            householdId: h.household_id,
-            addressId: h.address_id,
-            householdHeadId: h.household_head_id,
-            householdType: h.household_type,
-            householdContactNo: h.household_contact_no,
-            createdAt: h.created_at
-          })),
-          families: (famData || []).map(f => ({
-            familyId: f.family_id,
-            householdId: f.household_id,
-            familyHeadId: f.family_head_id,
-            createdAt: f.created_at
-          })),
-          users: (userData || []).map(u => ({
-            userId: u.user_id,
-            roleId: u.role_id,
-            username: u.username,
-            email: u.email,
-            fullName: u.full_name,
-            isActive: u.is_active
-          })),
-          roles: (roleData || []).map(r => ({
-            roleId: r.role_id,
-            roleName: r.role_name
-          })),
-          auditLog: (auditData || []).map(a => ({
-            auditId: a.audit_id,
-            tableName: a.table_name,
-            recordId: a.record_id,
-            actionType: a.action_type,
-            performedBy: a.performed_by,
-            performedAt: a.performed_at
-          })),
-          residentStatuses: (statusesData || []).map(s => ({
-            residentStatusId: s.resident_status_id,
-            residentId: s.resident_id,
-            statusType: s.status_type,
-            dateAdded: s.date_added,
-            notes: s.notes
-          })),
-          loading: false
-        });
-      } catch (err) {
-        console.error("Error fetching from Supabase:", err);
-        setData(prev => ({ ...prev, loading: false }));
-      }
+      setData({
+        residents: (resData || []).map(r => ({
+          residentId: r.resident_id,
+          householdId: r.household_id,
+          familyId: r.family_id,
+          parentId: r.parent_id,
+          firstName: r.first_name,
+          lastName: r.last_name,
+          middleName: r.middle_name,
+          extensionName: r.extension_name,
+          birthDate: r.birth_date,
+          sex: r.sex,
+          civilStatus: r.civil_status,
+          citizenship: r.citizenship,
+          occupation: r.occupation,
+          company: r.company,
+          bloodType: r.blood_type,
+          religion: r.religion,
+          contactNumber: r.contact_number,
+          email: r.email,
+          residencyStatus: r.residency_status,
+          residencyLengthYears: r.residency_length_years,
+          isDependent: r.is_dependent,
+          emergencyContactName: r.emergency_contact_name,
+          emergencyContactRelationship: r.emergency_contact_relationship,
+          emergencyContactNumber: r.emergency_contact_number,
+          isActive: r.is_active,
+          createdAt: r.created_at
+        })),
+        barangays: (brgyData || []).map(b => ({
+          id: b.barangay_id,
+          name: b.barangay_name,
+          barangayId: b.barangay_id,
+          barangayName: b.barangay_name,
+          city: b.city,
+          isActive: b.is_active
+        })),
+        streets: (streetData || []).map(s => ({
+          streetId: s.street_id,
+          barangayId: s.barangay_id,
+          streetName: s.street_name
+        })),
+        addresses: (addrData || []).map(a => ({
+          addressId: a.address_id,
+          streetId: a.street_id,
+          houseNo: a.house_no,
+          unitNo: a.unit_no
+        })),
+        households: (hhData || []).map(h => ({
+          householdId: h.household_id,
+          addressId: h.address_id,
+          householdHeadId: h.household_head_id,
+          householdType: h.household_type,
+          householdContactNo: h.household_contact_no,
+          status: "Active"
+        })),
+        families: (famData || []).map(f => ({
+          familyId: f.family_id,
+          householdId: f.household_id,
+          familyHeadId: f.family_head_id,
+          familyStatus: f.family_status
+        })),
+        users: (userData || []).map(u => ({
+          userId: u.user_id,
+          username: u.username,
+          fullName: u.full_name,
+          roleId: u.role_id,
+          barangayId: u.barangay_id,
+          isActive: u.is_active
+        })),
+        roles: (roleData || []).map(r => ({
+          roleId: r.role_id,
+          roleName: r.role_name
+        })),
+        auditLog: (auditData || []).map(a => ({
+          auditId: a.audit_id,
+          tableName: a.table_name,
+          recordId: a.record_id,
+          actionType: a.action_type,
+          performedBy: a.performed_by,
+          performedAt: a.performed_at
+        })),
+        residentStatuses: (statusesData || []).map(s => ({
+          residentStatusId: s.resident_status_id,
+          residentId: s.resident_id,
+          statusType: s.status_type,
+          dateAdded: s.date_added,
+          notes: s.notes
+        })),
+        loading: false
+      });
+    } catch (err) {
+      console.error("Error fetching from Supabase:", err);
+      setData(prev => ({ ...prev, loading: false }));
     }
+  };
 
+  useEffect(() => {
     fetchAllData();
   }, []);
 
@@ -237,7 +237,7 @@ export function DataProvider({ children }) {
   }, [data]);
 
   return (
-    <DataContext.Provider value={{ ...data, helpers }}>
+    <DataContext.Provider value={{ ...data, helpers, refetch: fetchAllData }}>
       {children}
     </DataContext.Provider>
   );
