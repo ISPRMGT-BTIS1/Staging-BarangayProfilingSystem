@@ -1,23 +1,19 @@
 import React, { useState } from "react";
-import {
-  residents,
-  households,
-  addresses,
-  streets,
-  barangays,
-  residentStatuses,
-  auditLog,
-  getResidentDisplayName,
-  getResidentShortName,
-  calculateAge,
-  calculateResidencyLength,
-  getHouseholdAddress,
-  getFullAddress,
-  getHouseholdBarangay,
-  families
-} from "../mockData";
+import { useData } from "../context/DataContext";
+import { logAudit } from "../utils/auditLogger";
 
-export default function ResidentDetailView({ residentId, onBack }) {
+export default function ResidentDetailView({ residentId, residentsList, onBack }) {
+  const { residents, households, addresses, streets, barangays, residentStatuses, auditLog, families, helpers: {
+    getResidentDisplayName,
+    getResidentShortName,
+    calculateAge,
+    calculateResidencyLength,
+    getHouseholdAddress,
+    getFullAddress,
+    getHouseholdBarangay,
+    getFamilyHeadName,
+    generateId
+  } } = useData();
   const resident = residents.find(r => r.residentId === residentId);
   const [activeTab, setActiveTab] = useState("personal");
 

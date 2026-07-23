@@ -1,13 +1,8 @@
 import React from "react";
-import {
-  households,
-  localPrograms,
-  residentStatuses,
-  calculateAge,
-  getResidentShortName
-} from "../mockData";
+import { useData } from "../context/DataContext";
 
 export default function DashboardView({ onPrintBirthdays, residentsList }) {
+  const { households, residentStatuses, helpers: { calculateAge, getResidentShortName, localPrograms } } = useData();
   const currentResidents = residentsList || [];
 
   // Dynamic stats calculation (excluding deceased for total active residents, but let's see)

@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import {
-  streets as initialStreets,
-  barangays,
-  generateId
-} from "../mockData";
+import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 
 export default function StreetsView() {
   const { currentUser } = useAuth();
-  const [streetsList, setStreetsList] = useState(initialStreets);
+  const { streets, barangays, helpers: { generateId } } = useData();
+  const [streetsList, setStreetsList] = useState([]);
+
+  React.useEffect(() => {
+    setStreetsList(streets);
+  }, [streets]);
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newStreetName, setNewStreetName] = useState("");

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { residents, calculateAge, getFullAddress } from "../../../mockData";
+import { useData } from "../../../context/DataContext";
 import { ApplicationBarangayClearancePreview } from "../templates/application-barangay-clearance/preview.tsx";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -24,6 +24,7 @@ function getFullName(r) {
  *   onClose  — called when user dismisses the modal
  */
 export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
+  const { residents, helpers: { calculateAge, getFullAddress } } = useData();
   const printRef = useRef(null);
 
   // ── resident search state ──────────────────────────────────────────────

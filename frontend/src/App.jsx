@@ -11,7 +11,8 @@ import HouseholdsView from "./components/HouseholdsView";
 import StreetsView from "./components/StreetsView";
 import UsersView from "./components/UsersView";
 import CertificatesPage from "./features/certificates/pages/CertificatesPage";
-import { residents as initialResidents, auditLog, getResidentDisplayName } from "./mockData";
+import { getResidentDisplayName } from "./utils/helpers";
+import { useData } from "./context/DataContext";
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -26,12 +27,23 @@ export default function App() {
 
 function AuthenticatedApp() {
   const { currentUser, isAdmin } = useAuth();
+  const { residents, auditLog, loading } = useData();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewProfilingModal, setShowNewProfilingModal] = useState(false);
   const [selectedHouseholdId, setSelectedHouseholdId] = useState(null);
-  const [residentsList, setResidentsList] = useState(initialResidents);
+  const [residentsList, setResidentsList] = useState([]);
   const [selectedResidentId, setSelectedResidentId] = useState(null);
+
+  React.useEffect(() => {
+    if (!loading) {
+      setResidentsList(residents);
+    }
+  }, [loading, residents]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-[#16324A] bg-[#F2F4F1]">Loading data from Supabase...</div>;
+  }
 
   const handleNewProfiling = () => {
     setActiveTab("residents");

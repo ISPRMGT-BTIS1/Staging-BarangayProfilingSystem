@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  households as initialHouseholds,
-  families as initialFamilies,
-  residents as initialResidents,
-  addresses,
-  streets,
-  barangays,
-  getResidentShortName,
-  getHouseholdAddress,
-  getHouseholdBarangay,
-  generateId
-} from "../mockData";
+import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import SearchableSelect from "./SearchableSelect";
@@ -23,11 +12,19 @@ export default function HouseholdsView({
   setResidentsList
 }) {
   const { currentUser } = useAuth();
-  const [householdsList, setHouseholdsList] = useState(initialHouseholds);
+  const { households, families, addresses, streets, barangays, helpers: { getResidentShortName, getHouseholdAddress, getHouseholdBarangay, generateId } } = useData();
+
+  const [householdsList, setHouseholdsList] = useState(households);
+  const [familiesList, setFamiliesList] = useState(families);
+
+  useEffect(() => {
+    setHouseholdsList(households);
+    setFamiliesList(families);
+  }, [households, families]);
+
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
-  const [familiesList, setFamiliesList] = useState(initialFamilies);
 
   // Add Family Modal
   const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);

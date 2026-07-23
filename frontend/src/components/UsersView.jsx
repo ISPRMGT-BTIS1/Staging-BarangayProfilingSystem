@@ -1,16 +1,16 @@
 import React, { useState } from "react";
-import {
-  users as initialUsers,
-  barangays,
-  roles,
-  generateId
-} from "../mockData";
+import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 
 export default function UsersView() {
   const { currentUser } = useAuth();
-  const [usersList, setUsersList] = useState(initialUsers);
+  const { users, barangays, roles, helpers: { generateId } } = useData();
+  const [usersList, setUsersList] = useState([]);
+
+  React.useEffect(() => {
+    setUsersList(users);
+  }, [users]);
   const [showAddModal, setShowAddModal] = useState(false);
   
   const [formData, setFormData] = useState({

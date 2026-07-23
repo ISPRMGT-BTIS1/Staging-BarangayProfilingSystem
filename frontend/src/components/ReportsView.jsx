@@ -1,13 +1,8 @@
 import React, { useState } from "react";
-import {
-  households,
-  generatedReports,
-  calculateAge,
-  getHouseholdBarangay,
-  residentStatuses
-} from "../mockData";
+import { useData } from "../context/DataContext";
 
 export default function ReportsView({ residentsList }) {
+  const { households, residentStatuses, helpers: { calculateAge, getHouseholdBarangay, generatedReports } } = useData();
   const currentResidents = residentsList || [];
 
   // Toggle state for the demographics legend

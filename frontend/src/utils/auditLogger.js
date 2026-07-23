@@ -1,15 +1,15 @@
-import { auditLog } from "../mockData";
+import { supabase } from "./supabaseClient";
 
-let auditCounter = 1;
-
-export function logAudit(tableName, recordId, actionType, performedBy, details) {
-  auditLog.push({
-    auditId: `AUD-${Date.now()}-${auditCounter++}`,
-    tableName,
-    recordId,
-    actionType,
-    performedBy,
-    performedAt: new Date().toISOString(),
-    details: typeof details === "string" ? details : JSON.stringify(details)
-  });
+export async function logAudit(tableName, recordId, actionType, performedBy, details) {
+  try {
+    await supabase.from("audit_log").insert([{
+      table_name: tableName,
+      record_id: recordId,
+      action_type: actionType,
+      performed_by: performedBy,
+      details: typeof details === "string" ? details : JSON.stringify(details)
+    }]);
+  } catch (err) {
+    console.error("Failed to log audit to Supabase", err);
+  }
 }

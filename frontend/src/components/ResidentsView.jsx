@@ -1,22 +1,5 @@
 import React, { useState } from "react";
-import {
-  residents as allResidents,
-  households,
-  families,
-  barangays,
-  streets,
-  addresses,
-  residentStatuses,
-  calculateAge,
-  calculateResidencyLength,
-  getResidentDisplayName,
-  getResidentShortName,
-  getHouseholdAddress,
-  getHouseholdBarangay,
-  getFamilyHeadName,
-  getFamilyMemberCount,
-  generateId
-} from "../mockData";
+import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import SearchableSelect from "./SearchableSelect";
@@ -36,6 +19,21 @@ export default function ResidentsView({
   onViewResident
 }) {
   const { currentUser } = useAuth();
+  const {
+    barangays,
+    residentStatuses,
+    helpers: {
+      calculateAge,
+      calculateResidencyLength,
+      getResidentDisplayName,
+      getResidentShortName,
+      getHouseholdAddress,
+      getHouseholdBarangay,
+      getFamilyHeadName,
+      getFamilyMemberCount,
+      generateId
+    }
+  } = useData();
 
   // Filters state
   const [statusFilter, setStatusFilter] = useState("all");
