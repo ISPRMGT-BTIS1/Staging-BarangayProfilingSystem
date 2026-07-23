@@ -1,25 +1,25 @@
 import React from "react";
 import { useData } from "../context/DataContext";
 
-export default function DashboardView({ onPrintBirthdays, residentsList }) {
-  const { households, residentStatuses, helpers: { calculateAge, getResidentShortName, localPrograms } } = useData();
-  const currentResidents = residentsList || [];
+export default function DashboardView({ onPrintBirthdays, residentsList: initialResidentsList }) {
+  const { residents, households, residentStatuses, helpers: { calculateAge, getResidentShortName, localPrograms } } = useData();
+  const residentsList = initialResidentsList || residents || [];
 
   // Dynamic stats calculation (excluding deceased for total active residents, but let's see)
-  const totalResidentsCount = currentResidents.filter(r => r.residencyStatus !== "Deceased").length;
+  const totalResidentsCount = residentsList.filter(r => r.residencyStatus !== "Deceased").length;
   
-  const brgy1ResidentsCount = currentResidents.filter(
+  const brgy1ResidentsCount = residentsList.filter(
     r => r.residencyStatus !== "Deceased" && r.householdId && households.find(h => h.householdId === r.householdId)?.householdId === "H-1" || households.find(h => h.householdId === r.householdId)?.householdId === "H-2" || households.find(h => h.householdId === r.householdId)?.householdId === "H-5"
   ).length; // Just a dynamic mock fallback
 
   // Let's compute actual counts from mock data
-  const brgy1Residents = currentResidents.filter(r => {
+  const brgy1Residents = residentsList.filter(r => {
     if (r.residencyStatus === "Deceased") return false;
     const h = households.find(hh => hh.householdId === r.householdId);
     return h?.addressId === "A-1" || h?.addressId === "A-2" || h?.addressId === "A-5";
   }).length;
 
-  const brgy2Residents = currentResidents.filter(r => {
+  const brgy2Residents = residentsList.filter(r => {
     if (r.residencyStatus === "Deceased") return false;
     const h = households.find(hh => hh.householdId === r.householdId);
     return h?.addressId === "A-3" || h?.addressId === "A-4";

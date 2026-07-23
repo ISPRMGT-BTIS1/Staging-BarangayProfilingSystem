@@ -1,27 +1,27 @@
 import React, { useState } from "react";
 import { useData } from "../context/DataContext";
 
-export default function ReportsView({ residentsList }) {
-  const { households, residentStatuses, helpers: { calculateAge, getHouseholdBarangay, generatedReports } } = useData();
-  const currentResidents = residentsList || [];
+export default function ReportsView({ residentsList: initialResidentsList }) {
+  const { residents, households, residentStatuses, helpers: { calculateAge, getHouseholdBarangay, generatedReports } } = useData();
+  const residentsList = initialResidentsList || residents || [];
 
   // Toggle state for the demographics legend
   const [highlightGender, setHighlightGender] = useState("all"); // "all", "male", "female"
   const [openMenuId, setOpenMenuId] = useState(null);
 
   // Dynamic calculations using new schema fields
-  const totalResidentsCount = currentResidents.filter(r => r.residencyStatus !== "Deceased").length;
+  const totalResidentsCount = residentsList.filter(r => r.residencyStatus !== "Deceased").length;
   
   // Seniors (age >= 60)
-  const totalSeniorsCount = currentResidents.filter(
+  const totalSeniorsCount = residentsList.filter(
     r => calculateAge(r.birthDate) >= 60 && r.residencyStatus !== "Deceased"
   ).length;
 
   const totalHouseholdsCount = households.length;
 
   // Gender counts
-  const maleCount = currentResidents.filter(r => r.sex === "Male" && r.residencyStatus !== "Deceased").length;
-  const femaleCount = currentResidents.filter(r => r.sex === "Female" && r.residencyStatus !== "Deceased").length;
+  const maleCount = residentsList.filter(r => r.sex === "Male" && r.residencyStatus !== "Deceased").length;
+  const femaleCount = residentsList.filter(r => r.sex === "Female" && r.residencyStatus !== "Deceased").length;
   
   const malePercentage = totalResidentsCount > 0 ? ((maleCount / totalResidentsCount) * 100).toFixed(1) : 0;
   const femalePercentage = totalResidentsCount > 0 ? ((femaleCount / totalResidentsCount) * 100).toFixed(1) : 0;

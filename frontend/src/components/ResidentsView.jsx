@@ -14,12 +14,13 @@ export default function ResidentsView({
   activeTab,
   setActiveTab,
   setSelectedHouseholdId,
-  residentsList,
+  residentsList: initialResidentsList,
   setResidentsList,
   onViewResident
 }) {
   const { currentUser } = useAuth();
   const {
+    residents,
     barangays,
     residentStatuses,
     helpers: {
@@ -34,6 +35,8 @@ export default function ResidentsView({
       generateId
     }
   } = useData();
+
+  const residentsList = initialResidentsList || residents || [];
 
   // Filters state
   const [statusFilter, setStatusFilter] = useState("all");

@@ -8,11 +8,13 @@ export default function HouseholdsView({
   searchQuery,
   selectedHouseholdId,
   setSelectedHouseholdId,
-  residentsList,
+  residentsList: initialResidentsList,
   setResidentsList
 }) {
   const { currentUser } = useAuth();
-  const { households, families, addresses, streets, barangays, helpers: { getResidentShortName, getHouseholdAddress, getHouseholdBarangay, generateId } } = useData();
+  const { residents, households, families, addresses, streets, barangays, helpers: { getResidentShortName, getHouseholdAddress, getHouseholdBarangay, generateId } } = useData();
+
+  const residentsList = initialResidentsList || residents || [];
 
   const [householdsList, setHouseholdsList] = useState(households);
   const [familiesList, setFamiliesList] = useState(families);
