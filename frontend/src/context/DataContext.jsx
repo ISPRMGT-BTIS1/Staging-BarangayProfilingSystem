@@ -1,7 +1,37 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient';
 
-const DataContext = createContext();
+const _noop = () => {};
+const _defaultHelpers = {
+  calculateAge: _noop,
+  calculateResidencyLength: _noop,
+  getResidentDisplayName: _noop,
+  getResidentShortName: _noop,
+  getHouseholdAddress: () => 'N/A',
+  getFullAddress: () => 'N/A',
+  getHouseholdBarangay: () => 'N/A',
+  getFamilyHeadName: () => 'N/A',
+  getFamilyMemberCount: () => 0,
+  generateId: _noop,
+  generatedReports: [],
+  localPrograms: [],
+};
+
+const DataContext = createContext({
+  residents: [],
+  barangays: [],
+  streets: [],
+  addresses: [],
+  households: [],
+  families: [],
+  users: [],
+  roles: [],
+  auditLog: [],
+  residentStatuses: [],
+  loading: true,
+  helpers: _defaultHelpers,
+  refetch: _noop,
+});
 
 export function DataProvider({ children }) {
   const [data, setData] = useState({

@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { CertificateType, CERTIFICATE_TYPE_LABELS } from '../types/certificate.types'
 import ApplicationBarangayClearanceModal from './ApplicationBarangayClearanceModal'
+import CertificationFinancialAssistanceModal from './CertificationFinancialAssistanceModal'
+import CertificationJobseekersModal from './CertificationJobseekersModal'
+import CertificationGoodMoralModal from './CertificationGoodMoralModal'
+import CertificationOfGuardianshipModal from './CertificationOfGuardianshipModal'
+import CertificationOfIndigencyModal from './CertificationOfIndigencyModal'
+import OathOfUndertakingModal from './OathOfUndertakingModal'
+import EventAttendanceModal from './EventAttendanceModal'
 
 interface CertificateCardProps {
   type: CertificateType
@@ -57,10 +64,46 @@ export function CertificateList() {
         isOpen={activeModal === CertificateType.APPLICATION_BARANGAY_CLEARANCE}
         onClose={handleClose}
       />
+      <CertificationFinancialAssistanceModal
+        isOpen={activeModal === CertificateType.CERTIFICATION_FINANCIAL_ASSISTANCE}
+        onClose={handleClose}
+      />
+      <CertificationJobseekersModal
+        isOpen={activeModal === CertificateType.CERTIFICATION_FIRST_TIME_JOBSEEKER}
+        onClose={handleClose}
+      />
+
+      <CertificationGoodMoralModal
+        isOpen={activeModal === CertificateType.CERTIFICATION_GOOD_MORAL}
+        onClose={handleClose}
+      />
+      <CertificationOfGuardianshipModal
+        isOpen={activeModal === CertificateType.CERTIFICATION_OF_GUARDIANSHIP}
+        onClose={handleClose}
+      />
+      <CertificationOfIndigencyModal
+        isOpen={activeModal === CertificateType.CERTIFICATION_OF_INDIGENCY}
+        onClose={handleClose}
+      />
+      <OathOfUndertakingModal
+        isOpen={activeModal === CertificateType.OATH_OF_UNDERTAKING}
+        onClose={handleClose}
+      />
+      <EventAttendanceModal
+        isOpen={activeModal === CertificateType.EVENT_ATTENDANCE_SHEET}
+        onClose={handleClose}
+      />
 
       {/* Other types: show a "coming soon" toast for now */}
       {activeModal !== null &&
-        activeModal !== CertificateType.APPLICATION_BARANGAY_CLEARANCE && (
+        activeModal !== CertificateType.APPLICATION_BARANGAY_CLEARANCE &&
+        activeModal !== CertificateType.CERTIFICATION_FINANCIAL_ASSISTANCE &&
+        activeModal !== CertificateType.CERTIFICATION_FIRST_TIME_JOBSEEKER &&
+        activeModal !== CertificateType.CERTIFICATION_GOOD_MORAL &&
+        activeModal !== CertificateType.CERTIFICATION_OF_GUARDIANSHIP &&
+        activeModal !== CertificateType.CERTIFICATION_OF_INDIGENCY &&
+        activeModal !== CertificateType.OATH_OF_UNDERTAKING &&
+        activeModal !== CertificateType.EVENT_ATTENDANCE_SHEET && (
           <div className="fixed bottom-6 right-6 z-50 ledger-container px-5 py-3 flex items-center gap-3 shadow-lg animate-in slide-in-from-bottom-2">
             <svg className="h-4 w-4 text-[#C8932B] fill-none stroke-current flex-shrink-0" viewBox="0 0 24 24" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />

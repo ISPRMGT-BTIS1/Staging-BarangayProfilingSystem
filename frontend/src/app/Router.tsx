@@ -12,6 +12,7 @@ const DashboardPage      = React.lazy(() => import('@/features/dashboard/pages/D
 const ResidentsPage      = React.lazy(() => import('@/features/residents/pages/ResidentsPage'))
 const ResidentDetailPage = React.lazy(() => import('@/features/residents/pages/ResidentDetailPage'))
 const HouseholdsPage     = React.lazy(() => import('@/features/households/pages/HouseholdsPage'))
+const EventsPage         = React.lazy(() => import('@/components/EventsView'))
 const BarangaysPage      = React.lazy(() => import('@/features/barangays/pages/BarangaysPage'))
 const CertificatesPage   = React.lazy(() => import('@/features/certificates/pages/CertificatesPage'))
 const ReportsPage        = React.lazy(() => import('@/features/reports/pages/ReportsPage'))
@@ -75,6 +76,7 @@ export function AppRouter() {
           <Route path="/residents"    element={<ResidentsPage />} />
           <Route path="/residents/:id" element={<ResidentDetailPage />} />
           <Route path="/households"   element={<HouseholdsPage />} />
+          <Route path="/events"       element={<EventsPage />} />
           <Route path="/barangays"    element={<BarangaysPage />} />
           <Route path="/certificates" element={<CertificatesPage />} />
           <Route path="/reports"      element={<ReportsPage />} />

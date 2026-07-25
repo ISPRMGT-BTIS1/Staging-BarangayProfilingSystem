@@ -449,6 +449,44 @@ export default function ResidentsView({
   const selectClass = `${inputClass} cursor-pointer`;
   const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
 
+  // ── Quick Archive / Status Change ───────────────────────────────────────────
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveResident, setArchiveResident] = useState(null);
+  const [archiveStatus, setArchiveStatus] = useState("Inactive");
+  const [archiveSaving, setArchiveSaving] = useState(false);
+
+  const openArchiveModal = (e, resident) => {
+    e.stopPropagation();
+    setArchiveResident(resident);
+    setArchiveStatus(resident.residencyStatus === "Active" ? "Inactive" : resident.residencyStatus);
+    setShowArchiveModal(true);
+  };
+
+  const handleArchive = async (e) => {
+    e.preventDefault();
+    setArchiveSaving(true);
+    try {
+      const { error } = await supabase
+        .from('residents')
+        .update({ residency_status: archiveStatus })
+        .eq('resident_id', archiveResident.residentId);
+      if (error) throw error;
+      await logAudit(
+        "residents", archiveResident.residentId, "UPDATE",
+        currentUser?.userId || null,
+        `Status changed to ${archiveStatus} for ${archiveResident.lastName}, ${archiveResident.firstName}`
+      );
+      setShowArchiveModal(false);
+      setArchiveResident(null);
+      if (refetch) refetch();
+    } catch (err) {
+      console.error("Failed to archive resident:", err);
+      alert("Failed to update resident status.");
+    } finally {
+      setArchiveSaving(false);
+    }
+  };
+
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* View Header */}
@@ -631,9 +669,16 @@ export default function ResidentsView({
                       <td className="text-right whitespace-nowrap">
                         <button
                           onClick={(e) => openEditModal(e, resident)}
-                          className="mr-2 border border-[#2E5A44] text-[#2E5A44] hover:bg-[#2E5A44] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                          className="mr-1 border border-[#2E5A44] text-[#2E5A44] hover:bg-[#2E5A44] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={(e) => openArchiveModal(e, resident)}
+                          className="mr-1 border border-[#C8932B] text-[#C8932B] hover:bg-[#C8932B] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                          title="Change residency status"
+                        >
+                          Archive
                         </button>
                         <button
                           onClick={() => onViewResident(resident.residentId)}
@@ -946,6 +991,54 @@ export default function ResidentsView({
                 >
                   Save to Registry
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Archive / Status Change Modal */}
+      {showArchiveModal && archiveResident && (
+        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#C8932B] w-full max-w-sm rounded-xs overflow-hidden shadow-xl">
+            <div className="bg-[#C8932B] text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-base flex items-center space-x-2">
+                <span>📁</span>
+                <span>Change Residency Status</span>
+              </h3>
+              <button onClick={() => setShowArchiveModal(false)} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            <form onSubmit={handleArchive} className="p-6 space-y-4 font-sans">
+              <div className="bg-[#F9FAF8] border border-[#D1D7CE] rounded-xs p-3 text-xs">
+                <p className="font-mono font-bold text-[#16324A]">{archiveResident.lastName}, {archiveResident.firstName}</p>
+                <p className="text-slate-400 mt-0.5 font-mono">{archiveResident.residentId}</p>
+              </div>
+              <div className="flex flex-col">
+                <label className={labelClass}>New Residency Status</label>
+                <select
+                  value={archiveStatus}
+                  onChange={(e) => setArchiveStatus(e.target.value)}
+                  className={`${selectClass} font-semibold`}
+                >
+                  <option value="Active">Active Record</option>
+                  <option value="Inactive">Inactive Record</option>
+                  <option value="Moved">Moved Outside Barangay</option>
+                  <option value="Deceased">Deceased</option>
+                </select>
+              </div>
+              {archiveStatus === "Deceased" && (
+                <div className="bg-[#9B3D30]/10 border border-[#9B3D30]/30 text-[#9B3D30] text-xs font-semibold px-4 py-2.5 rounded-xs flex items-center space-x-2">
+                  <span>⚠️</span>
+                  <span>This action requires supervisor confirmation.</span>
+                </div>
+              )}
+              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4">
+                <button type="button" onClick={() => setShowArchiveModal(false)}
+                  className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
+                >Cancel</button>
+                <button type="submit" disabled={archiveSaving}
+                  className="bg-[#C8932B] hover:bg-[#a97a22] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                >{archiveSaving ? "Saving…" : "Confirm Status Change"}</button>
               </div>
             </form>
           </div>

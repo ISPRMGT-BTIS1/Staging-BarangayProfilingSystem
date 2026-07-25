@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useData } from "../../../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
-import { ApplicationBarangayClearancePreview } from "../templates/application-barangay-clearance/preview.tsx";
+import { CertificationJobseekersPreview } from "../templates/certification-first-time-jobseeker/preview.tsx";
 import { logCertificateRequest } from "../utils/logCertificateRequest";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -14,18 +14,7 @@ function getFullName(r) {
 
 // ─── component ──────────────────────────────────────────────────────────────
 
-/**
- * ApplicationBarangayClearanceModal
- *
- * Two-panel modal:
- *   Left  → data-entry form (resident picker + overrideable fields)
- *   Right → live preview of the printable certificate
- *
- * Props:
- *   isOpen   — controls visibility
- *   onClose  — called when user dismisses the modal
- */
-export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
+export default function CertificationJobseekersModal({ isOpen, onClose }) {
   const { residents, helpers: { calculateAge, getFullAddress } } = useData();
   const { currentUser } = useAuth();
   const printRef = useRef(null);
@@ -41,8 +30,10 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
   const [address, setAddress] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
-  const [purpose, setPurpose] = useState("");
-  const [parentName, setParentName] = useState("");
+  const [residencyYears, setResidencyYears] = useState("");
+  const [residencySince, setResidencySince] = useState("");
+  const [witnessName, setWitnessName] = useState("Hon. Michael Lauzon");
+  const [witnessPosition, setWitnessPosition] = useState("Barangay Kagawad");
 
   // ── stage: 'form' | 'preview' ─────────────────────────────────────────
   const [stage, setStage] = useState("form");
@@ -67,8 +58,10 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
       setAddress("");
       setAge("");
       setGender("");
-      setPurpose("");
-      setParentName("");
+      setResidencyYears("");
+      setResidencySince("");
+      setWitnessName("Hon. Michael Lauzon");
+      setWitnessPosition("Barangay Kagawad");
       setStage("form");
     }
   }, [isOpen]);
@@ -80,14 +73,6 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
     setAddress(getFullAddress(selectedResident.householdId));
     setAge(String(calculateAge(selectedResident.birthDate)));
     setGender(selectedResident.sex || "");
-    // auto-fill parent if minor (< 18)
-    const resAge = calculateAge(selectedResident.birthDate);
-    if (resAge < 18 && selectedResident.parentId) {
-      const parent = residents.find((r) => r.residentId === selectedResident.parentId);
-      if (parent) setParentName(getFullName(parent));
-    } else {
-      setParentName("");
-    }
   }, [selectedResident]);
 
   // ── resident dropdown options ────────────────────────────────────────
@@ -101,45 +86,53 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
       }).slice(0, 8);
 
   // ── preview data object ──────────────────────────────────────────────
-  const previewData = { name, address, age, gender, purpose, parentName };
+  const previewData = { name, address, age, gender, residencyYears, residencySince, witnessName, witnessPosition };
 
   // ── print handler ────────────────────────────────────────────────────
   const handlePrint = () => {
     logCertificateRequest({
-      certificateType: 'APPLICATION_BARANGAY_CLEARANCE',
+      certificateType: 'CERTIFICATION_FIRST_TIME_JOBSEEKER',
       residentName: name || null,
       residentId: selectedResident?.residentId || null,
-      purpose: purpose || null,
+      purpose: null,
       issuedBy: currentUser?.userId || null,
     });
     window.print();
   };
 
+  // ── validation ────────────────────────────────────────────────────────
+  const isComplete =
+    name && address && age && gender && residencyYears && residencySince && witnessName && witnessPosition;
+
   if (!isOpen) return null;
 
   // ─────────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(22, 50, 74, 0.55)", backdropFilter: "blur(2px)" }}
-    >
-      <div
-        className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col"
-        style={{ width: "980px", maxWidth: "96vw", maxHeight: "92vh", overflow: "hidden" }}
-      >
+    // 1. Converted inline styles to Tailwind classes so print: modifiers can override them
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+
+      {/* 2. Added print stylesheet to remove browser URL and Date headers */}
+      <style>
+        {`@media print { 
+          @page { margin: 0; } 
+          body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+        }`}
+      </style>
+
+      <div className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col w-[980px] max-w-[96vw] max-h-[92vh] overflow-hidden print:w-full print:max-w-none print:h-auto print:max-h-none print:overflow-visible print:border-none print:shadow-none">
+
         {/* ── Header ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0 print:hidden">
           <div>
             <h2 className="text-base font-serif font-bold text-[#16324A]">
-              Application for Barangay Clearance / Certification Slip
+              Certification for First Time Jobseekers Act of 2019
             </h2>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-0.5">
-              APPLICATION_BARANGAY_CLEARANCE
+              CERTIFICATION_JOBSEEKERS
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Stage toggle */}
             <div className="flex items-center border border-[#D1D7CE] rounded-xs overflow-hidden text-xs font-mono">
               <button
                 onClick={() => setStage("form")}
@@ -163,7 +156,6 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
               </button>
             </div>
 
-            {/* Close */}
             <button
               onClick={onClose}
               className="ml-2 p-1.5 text-slate-400 hover:text-[#16324A] hover:bg-[#F2F4F1] rounded-xs transition-all cursor-pointer"
@@ -176,18 +168,16 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
         </div>
 
         {/* ── Body ──────────────────────────────────────────────────────── */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden print:overflow-visible">
 
           {/* ── Left: Data Entry Form ────────────────────────────────── */}
           <div
-            className={`flex flex-col border-r border-[#D1D7CE] overflow-y-auto ${
+            className={`flex flex-col border-r border-[#D1D7CE] overflow-y-auto print:hidden ${
               stage === "preview" ? "hidden md:flex" : "flex"
             }`}
             style={{ width: "400px", minWidth: "340px" }}
           >
             <div className="p-6 space-y-5 flex-1">
-
-              {/* Resident picker */}
               <div>
                 <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1.5">
                   Select Resident
@@ -249,7 +239,6 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                   Certificate Fields
                 </p>
 
-                {/* NAME */}
                 <FormField label="Name" required>
                   <input
                     type="text"
@@ -260,7 +249,6 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                   />
                 </FormField>
 
-                {/* ADDRESS */}
                 <FormField label="Address" required>
                   <input
                     type="text"
@@ -271,7 +259,6 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                   />
                 </FormField>
 
-                {/* AGE */}
                 <FormField label="Age" required>
                   <input
                     type="number"
@@ -280,11 +267,10 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                     className={inputCls}
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
-                    placeholder="e.g. 25"
+                    placeholder="e.g. 21"
                   />
                 </FormField>
 
-                {/* GENDER */}
                 <FormField label="Gender / Kasarian" required>
                   <select
                     className={inputCls}
@@ -297,32 +283,52 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                   </select>
                 </FormField>
 
-                {/* PURPOSE */}
-                <FormField label="Purpose" required>
-                  <textarea
-                    className={`${inputCls} resize-none`}
-                    rows={3}
-                    value={purpose}
-                    onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="e.g. Employment, Loan application…"
+                <FormField label="Years of Residency" required>
+                  <input
+                    type="number"
+                    min={0}
+                    max={120}
+                    className={inputCls}
+                    value={residencyYears}
+                    onChange={(e) => setResidencyYears(e.target.value)}
+                    placeholder="e.g. 21"
                   />
                 </FormField>
 
-                {/* PARENT/S IF MINOR */}
-                <FormField label="Name of Parent/s (if minor)">
+                <FormField label="Resident Since (Month Year)" required>
                   <input
                     type="text"
                     className={inputCls}
-                    value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
-                    placeholder="Leave blank if not applicable"
+                    value={residencySince}
+                    onChange={(e) => setResidencySince(e.target.value)}
+                    placeholder="e.g. June 2007"
+                  />
+                </FormField>
+
+                <FormField label="Witnessed By (Name)" required>
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={witnessName}
+                    onChange={(e) => setWitnessName(e.target.value)}
+                    placeholder="Witness Name"
+                  />
+                </FormField>
+
+                <FormField label="Witnessed By (Position)" required>
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={witnessPosition}
+                    onChange={(e) => setWitnessPosition(e.target.value)}
+                    placeholder="Witness Position"
                   />
                 </FormField>
               </div>
             </div>
 
             {/* ── Form action bar ──────────────────────────────────── */}
-            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
               <button
                 onClick={onClose}
                 className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#F2F4F1] cursor-pointer transition-all"
@@ -339,7 +345,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                 </button>
                 <button
                   onClick={handlePrint}
-                  disabled={!name || !address || !age || !gender || !purpose}
+                  disabled={!isComplete}
                   className="text-xs font-mono uppercase tracking-wider px-4 py-2 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg className="h-3.5 w-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
@@ -355,17 +361,17 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
 
           {/* ── Right: Live Preview ──────────────────────────────────── */}
           <div
-            className={`flex-1 overflow-y-auto bg-[#E8EBE5] flex flex-col items-center py-8 ${
+            className={`flex-1 overflow-y-auto bg-[#E8EBE5] flex flex-col items-center py-8 print:p-0 print:bg-white print:block print:overflow-visible ${
               stage === "form" ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3 print:hidden">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
                 Print Preview
               </span>
               <button
                 onClick={handlePrint}
-                disabled={!name || !address || !age || !gender || !purpose}
+                disabled={!isComplete}
                 className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <svg className="h-3 w-3 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
@@ -377,15 +383,16 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
               </button>
             </div>
 
-            <div className="shadow-2xl">
-              <ApplicationBarangayClearancePreview
+            {/* 3. Scaled Wrapper converted to Tailwind scale utility to allow print overrides */}
+            <div className="shadow-2xl origin-top scale-[0.65] mb-[-35%] print:scale-100 print:mb-0 print:shadow-none print:flex print:justify-center print:w-full">
+              <CertificationJobseekersPreview
                 ref={printRef}
                 data={previewData}
               />
             </div>
 
-            {(!name || !address || !age || !gender || !purpose) && (
-              <p className="mt-4 text-[11px] text-slate-500 font-mono italic">
+            {!isComplete && (
+              <p className="mt-4 text-[11px] text-slate-500 font-mono italic print:hidden">
                 Fill in the required fields to enable printing.
               </p>
             )}

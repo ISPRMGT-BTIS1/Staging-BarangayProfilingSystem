@@ -2,17 +2,20 @@ import React, { useState } from "react";
 import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
+import { supabase } from "../utils/supabaseClient";
 
 export default function UsersView() {
   const { currentUser } = useAuth();
-  const { users, barangays, roles, helpers: { generateId } } = useData();
+  const { users, barangays, roles, refetch } = useData();
   const [usersList, setUsersList] = useState([]);
 
   React.useEffect(() => {
     setUsersList(users);
   }, [users]);
+
   const [showAddModal, setShowAddModal] = useState(false);
-  
+  const [saving, setSaving] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -31,7 +34,7 @@ export default function UsersView() {
     });
   };
 
-  const handleAddUser = (e) => {
+  const handleAddUser = async (e) => {
     e.preventDefault();
     if (!formData.fullName || !formData.username || !formData.password || !formData.barangayId) {
       alert("Please fill in all required fields.");
@@ -43,74 +46,84 @@ export default function UsersView() {
       return;
     }
 
-    // Check duplicate username
     if (usersList.some(u => u.username === formData.username)) {
       alert("Username already exists!");
       return;
     }
 
-    const newUserId = generateId("USR");
-    const newUser = {
-      userId: newUserId,
-      username: formData.username,
-      passwordHash: formData.password, // Plain text matching mock implementation
-      fullName: formData.fullName,
-      roleId: parseInt(formData.roleId),
-      barangayId: formData.barangayId,
-      isActive: formData.isActive
-    };
+    setSaving(true);
+    try {
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert([{
+          full_name: formData.fullName,
+          username: formData.username,
+          password_hash: formData.password,
+          role_id: parseInt(formData.roleId),
+          barangay_id: parseInt(String(formData.barangayId).replace(/\D/g, ''), 10) || null,
+          is_active: formData.isActive
+        }])
+        .select('user_id')
+        .single();
 
-    initialUsers.push(newUser);
-    setUsersList([...usersList, newUser]);
+      if (error) throw error;
 
-    // Log Audit
-    logAudit(
-      "users",
-      newUserId,
-      "CREATE",
-      currentUser?.userId || "USR-1",
-      `Created user: ${formData.username} (${formData.fullName})`
-    );
+      await logAudit(
+        "users",
+        newUser.user_id,
+        "CREATE",
+        currentUser?.userId || null,
+        `Created user: ${formData.username} (${formData.fullName})`
+      );
 
-    setShowAddModal(false);
-    setFormData({
-      fullName: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
-      roleId: 3,
-      barangayId: "",
-      isActive: true
-    });
-    alert(`Successfully registered user "${newUser.fullName}"!`);
+      setShowAddModal(false);
+      setFormData({
+        fullName: "",
+        username: "",
+        password: "",
+        confirmPassword: "",
+        roleId: 3,
+        barangayId: "",
+        isActive: true
+      });
+      alert(`Successfully registered user "${formData.fullName}"!`);
+      if (refetch) refetch();
+
+    } catch (err) {
+      console.error("Failed to create user:", err);
+      alert("Failed to register user in database. See console for details.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const toggleUserActive = (userId, currentStatus, username) => {
+  const toggleUserActive = async (userId, currentStatus, username) => {
     const newStatus = !currentStatus;
     const actionLabel = newStatus ? "activate" : "deactivate";
-    
-    if (confirm(`Are you sure you want to ${actionLabel} user "${username}"?`)) {
-      const updated = usersList.map(u => {
-        if (u.userId === userId) {
-          return { ...u, isActive: newStatus };
-        }
-        return u;
-      });
 
-      // Update mock data array
-      const found = initialUsers.find(u => u.userId === userId);
-      if (found) found.isActive = newStatus;
+    if (!confirm(`Are you sure you want to ${actionLabel} user "${username}"?`)) return;
 
-      setUsersList(updated);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_active: newStatus })
+        .eq('user_id', userId);
 
-      // Log Audit
-      logAudit(
+      if (error) throw error;
+
+      await logAudit(
         "users",
         userId,
         "UPDATE",
-        currentUser?.userId || "USR-1",
+        currentUser?.userId || null,
         `${newStatus ? "ACTIVATED" : "DEACTIVATED"} user: ${username}`
       );
+
+      if (refetch) refetch();
+
+    } catch (err) {
+      console.error("Failed to update user status:", err);
+      alert("Failed to update user status. See console for details.");
     }
   };
 
@@ -159,7 +172,13 @@ export default function UsersView() {
             </tr>
           </thead>
           <tbody>
-            {usersList.map((user) => (
+            {usersList.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="text-center py-8 text-slate-400 font-serif italic bg-white">
+                  No users registered yet.
+                </td>
+              </tr>
+            ) : usersList.map((user) => (
               <tr key={user.userId}>
                 <td className="font-bold text-[#16324A] text-sm">
                   {user.fullName}
@@ -328,9 +347,10 @@ export default function UsersView() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
+                  disabled={saving}
+                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
                 >
-                  Register User
+                  {saving ? "Saving…" : "Register User"}
                 </button>
               </div>
             </form>

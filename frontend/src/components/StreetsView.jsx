@@ -17,6 +17,13 @@ export default function StreetsView() {
   const [newStreetName, setNewStreetName] = useState("");
   const [newBarangayId, setNewBarangayId] = useState("");
 
+  // Edit state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editStreet, setEditStreet] = useState(null); // { streetId, streetName, barangayId }
+  const [editStreetName, setEditStreetName] = useState("");
+  const [editBarangayId, setEditBarangayId] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   const handleAddStreet = async (e) => {
     e.preventDefault();
     if (!newStreetName || !newBarangayId) {
@@ -84,6 +91,51 @@ export default function StreetsView() {
         console.error("Error deleting street:", err);
         alert("Failed to delete street from database. It might be in use.");
       }
+    }
+  };
+
+  const openEditModal = (street) => {
+    setEditStreet(street);
+    setEditStreetName(street.streetName);
+    setEditBarangayId(street.barangayId);
+    setShowEditModal(true);
+  };
+
+  const handleEditStreet = async (e) => {
+    e.preventDefault();
+    if (!editStreetName || !editBarangayId) {
+      alert("Please fill in all fields.");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase
+        .from('streets')
+        .update({
+          street_name: editStreetName,
+          barangay_id: parseInt(String(editBarangayId).replace(/\D/g, ''), 10)
+        })
+        .eq('street_id', editStreet.streetId);
+
+      if (error) throw error;
+
+      await logAudit(
+        "streets",
+        editStreet.streetId,
+        "UPDATE",
+        currentUser?.userId || null,
+        `Updated street: ${editStreet.streetName} → ${editStreetName}`
+      );
+
+      setShowEditModal(false);
+      setEditStreet(null);
+      if (refetch) refetch();
+
+    } catch (err) {
+      console.error("Error updating street:", err);
+      alert("Failed to update street.");
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -158,6 +210,12 @@ export default function StreetsView() {
                       {brgy ? brgy.name : "Unknown"}
                     </td>
                     <td className="text-right space-x-2">
+                      <button
+                        onClick={() => openEditModal(street)}
+                        className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer mr-1"
+                      >
+                        Edit
+                      </button>
                       <button
                         onClick={() => handleDeleteStreet(street.streetId, street.streetName)}
                         className="border border-[#9B3D30] text-[#9B3D30] hover:bg-[#9B3D30] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
@@ -240,6 +298,71 @@ export default function StreetsView() {
                   className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
                 >
                   Add Street
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Street Modal */}
+      {showEditModal && editStreet && (
+        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#16324A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
+            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
+                <span>✏️</span>
+                <span>Edit Street</span>
+              </h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleEditStreet} className="p-6 space-y-4 font-sans">
+              <div className="flex flex-col">
+                <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Street Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editStreetName}
+                  onChange={(e) => setEditStreetName(e.target.value)}
+                  className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Barangay Jurisdiction</label>
+                <select
+                  value={editBarangayId}
+                  onChange={(e) => setEditBarangayId(e.target.value)}
+                  required
+                  className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
+                >
+                  <option value="">Select Barangay...</option>
+                  {barangays.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                >
+                  {editSaving ? "Saving…" : "Save Changes"}
                 </button>
               </div>
             </form>

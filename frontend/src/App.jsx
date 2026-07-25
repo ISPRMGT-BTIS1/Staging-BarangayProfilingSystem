@@ -10,6 +10,7 @@ import ResidentDetailView from "./components/ResidentDetailView";
 import HouseholdsView from "./components/HouseholdsView";
 import StreetsView from "./components/StreetsView";
 import UsersView from "./components/UsersView";
+import EventsView from "./components/EventsView";
 import CertificatesPage from "./features/certificates/pages/CertificatesPage";
 import { getResidentDisplayName } from "./utils/helpers";
 import { useData } from "./context/DataContext";
@@ -101,6 +102,8 @@ function AuthenticatedApp() {
             setResidentsList={setResidentsList}
           />
         );
+      case "events":
+        return <EventsView />;
       case "certificates":
         return <CertificatesPage />;
       case "reports":

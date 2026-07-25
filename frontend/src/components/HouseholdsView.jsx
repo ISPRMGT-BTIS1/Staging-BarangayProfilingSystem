@@ -49,6 +49,18 @@ export default function HouseholdsView({
     householdHeadId: ""
   });
 
+  // Edit Household state
+  const [showEditHHModal, setShowEditHHModal] = useState(false);
+  const [editHH, setEditHH] = useState(null);
+  const [editHHForm, setEditHHForm] = useState({ householdType: "House", householdContactNo: "", householdHeadId: "" });
+  const [editHHSaving, setEditHHSaving] = useState(false);
+
+  // Edit Family state
+  const [showEditFamilyModal, setShowEditFamilyModal] = useState(false);
+  const [editFamily, setEditFamily] = useState(null);
+  const [editFamilyForm, setEditFamilyForm] = useState({ familyHeadId: "", familyStatus: "Active" });
+  const [editFamilySaving, setEditFamilySaving] = useState(false);
+
   // If a household link was clicked from the Residents view, automatically expand it
   useEffect(() => {
     if (selectedHouseholdId) {
@@ -234,6 +246,152 @@ export default function HouseholdsView({
   const selectClass = `${inputClass} cursor-pointer`;
   const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
 
+  // ── Edit Household handlers ──────────────────────────────────────────────
+  const openEditHH = (e, hh) => {
+    e.stopPropagation();
+    setEditHH(hh);
+    setEditHHForm({
+      householdType: hh.householdType || "House",
+      householdContactNo: hh.householdContactNo || "",
+      householdHeadId: hh.householdHeadId || ""
+    });
+    setShowEditHHModal(true);
+  };
+
+  const handleEditHH = async (e) => {
+    e.preventDefault();
+    setEditHHSaving(true);
+    try {
+      const { error } = await supabase
+        .from('households')
+        .update({
+          household_type: editHHForm.householdType,
+          household_contact_no: editHHForm.householdContactNo || null,
+          household_head_id: editHHForm.householdHeadId
+            ? parseInt(String(editHHForm.householdHeadId).replace(/\D/g, ''), 10)
+            : null
+        })
+        .eq('household_id', editHH.householdId);
+
+      if (error) throw error;
+
+      await logAudit(
+        "households", editHH.householdId, "UPDATE",
+        currentUser?.userId || null,
+        `Updated household ${editHH.householdId}`
+      );
+
+      setShowEditHHModal(false);
+      setEditHH(null);
+      if (refetch) refetch();
+    } catch (err) {
+      console.error("Error updating household:", err);
+      alert("Failed to update household.");
+    } finally {
+      setEditHHSaving(false);
+    }
+  };
+
+  const handleDeleteHH = async (e, hh) => {
+    e.stopPropagation();
+    const resCount = (residentsList || residents || []).filter(r => r.householdId === hh.householdId).length;
+    if (resCount > 0) {
+      alert(`Cannot delete: this household still has ${resCount} resident(s) assigned to it. Reassign or archive them first.`);
+      return;
+    }
+    if (!confirm(`Delete household ${hh.householdId}? This will also delete its address record. This cannot be undone.`)) return;
+    try {
+      // Delete household first (addresses may have FK constraint), then address
+      const { error: hhErr } = await supabase.from('households').delete().eq('household_id', hh.householdId);
+      if (hhErr) throw hhErr;
+      const { error: addrErr } = await supabase.from('addresses').delete().eq('address_id', hh.addressId);
+      if (addrErr) console.warn("Could not delete address:", addrErr);
+
+      await logAudit(
+        "households", hh.householdId, "DELETE",
+        currentUser?.userId || null,
+        `Deleted household ${hh.householdId}`
+      );
+      if (refetch) refetch();
+    } catch (err) {
+      console.error("Error deleting household:", err);
+      alert("Failed to delete household. See console for details.");
+    }
+  };
+
+  // ── Edit/Delete Family handlers ──────────────────────────────────────────
+  const openEditFamily = (e, family) => {
+    e.stopPropagation();
+    setEditFamily(family);
+    setEditFamilyForm({
+      familyHeadId: family.familyHeadId || "",
+      familyStatus: family.familyStatus || "Active"
+    });
+    setShowEditFamilyModal(true);
+  };
+
+  const handleEditFamily = async (e) => {
+    e.preventDefault();
+    setEditFamilySaving(true);
+    try {
+      const familyHeadId = editFamilyForm.familyHeadId
+        ? parseInt(String(editFamilyForm.familyHeadId).replace(/\D/g, ''), 10)
+        : null;
+
+      const { error } = await supabase
+        .from('families')
+        .update({
+          family_head_id: familyHeadId,
+          family_status: editFamilyForm.familyStatus
+        })
+        .eq('family_id', editFamily.familyId);
+
+      if (error) throw error;
+
+      // If head changed, update the resident record too
+      if (familyHeadId) {
+        await supabase
+          .from('residents')
+          .update({ is_dependent: false, family_id: editFamily.familyId })
+          .eq('resident_id', familyHeadId);
+      }
+
+      await logAudit(
+        "families", editFamily.familyId, "UPDATE",
+        currentUser?.userId || null,
+        `Updated family ${editFamily.familyId}`
+      );
+
+      setShowEditFamilyModal(false);
+      setEditFamily(null);
+      if (refetch) refetch();
+    } catch (err) {
+      console.error("Error updating family:", err);
+      alert("Failed to update family.");
+    } finally {
+      setEditFamilySaving(false);
+    }
+  };
+
+  const handleDeleteFamily = async (e, family) => {
+    e.stopPropagation();
+    const memberCount = (residentsList || residents || []).filter(r => r.familyId === family.familyId).length;
+    if (memberCount > 0) {
+      alert(`Cannot delete: family ${family.familyId} still has ${memberCount} resident(s). Reassign them first.`);
+      return;
+    }
+    if (!confirm(`Delete family unit ${family.familyId}? This cannot be undone.`)) return;
+    try {
+      const { error } = await supabase.from('families').delete().eq('family_id', family.familyId);
+      if (error) throw error;
+      await logAudit("families", family.familyId, "DELETE", currentUser?.userId || null, `Deleted family ${family.familyId}`);
+      if (refetch) refetch();
+    } catch (err) {
+      console.error("Error deleting family:", err);
+      alert("Failed to delete family.");
+    }
+  };
+
   // Prepare resident options for searchable select
   const residentOptions = [
     { value: "", label: "None — No head selected" },
@@ -366,7 +524,20 @@ export default function HouseholdsView({
                       <span className="text-[10px] text-slate-400 font-mono">Registry Logged</span>
                     </div>
 
-
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => openEditHH(e, household)}
+                        className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteHH(e, household)}
+                        className="border border-[#9B3D30] text-[#9B3D30] hover:bg-[#9B3D30] hover:text-white text-[10px] px-2 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
 
                     <span className="text-slate-400 text-sm font-bold ml-2">
                       {isExpanded ? "▲" : "▼"}
@@ -456,16 +627,29 @@ export default function HouseholdsView({
                                     ? getResidentShortName(familyHeadRelation)
                                     : "No Active Head Linked"}
                                 </p>
-                                <div className="mt-2 pt-2 border-t border-[#D1D7CE]/50 flex justify-between text-xs text-slate-500">
-                                  {/* Derive memberCount dynamically */}
+                                <div className="mt-2 pt-2 border-t border-[#D1D7CE]/50 flex justify-between items-center text-xs text-slate-500">
                                   <span>
                                     Members: <strong>{memberCount}</strong>
                                   </span>
-                                  {familyHeadRelation && (
-                                    <span className="font-mono text-[10px] bg-[#F2F4F1] border px-1 border-[#D1D7CE] rounded">
-                                      {familyHeadRelation.residentId}
-                                    </span>
-                                  )}
+                                  <div className="flex items-center gap-1.5">
+                                    {familyHeadRelation && (
+                                      <span className="font-mono text-[10px] bg-[#F2F4F1] border px-1 border-[#D1D7CE] rounded">
+                                        {familyHeadRelation.residentId}
+                                      </span>
+                                    )}
+                                    <button
+                                      onClick={(e) => openEditFamily(e, family)}
+                                      className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[9px] px-1.5 py-0.5 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={(e) => handleDeleteFamily(e, family)}
+                                      className="border border-[#9B3D30] text-[#9B3D30] hover:bg-[#9B3D30] hover:text-white text-[9px] px-1.5 py-0.5 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                                    >
+                                      Del
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -772,6 +956,117 @@ export default function HouseholdsView({
                 >
                   Create Family
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Household Modal */}
+      {showEditHHModal && editHH && (
+        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
+            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
+                <span>🏡</span>
+                <span>Edit Household {editHH.householdId}</span>
+              </h3>
+              <button onClick={() => setShowEditHHModal(false)} className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            <form onSubmit={handleEditHH} className="p-6 space-y-4 font-sans">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <label className={labelClass}>Household Type</label>
+                  <select
+                    value={editHHForm.householdType}
+                    onChange={(e) => setEditHHForm({ ...editHHForm, householdType: e.target.value })}
+                    className={selectClass}
+                  >
+                    <option value="House">House</option>
+                    <option value="Apartment">Apartment</option>
+                    <option value="Boarding House">Boarding House</option>
+                    <option value="Compound">Compound</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className={labelClass}>Contact No.</label>
+                  <input
+                    type="text"
+                    value={editHHForm.householdContactNo}
+                    onChange={(e) => setEditHHForm({ ...editHHForm, householdContactNo: e.target.value })}
+                    placeholder="e.g. 09171234567"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <label className={labelClass}>Household Head (Resident)</label>
+                <SearchableSelect
+                  name="householdHeadId"
+                  value={editHHForm.householdHeadId}
+                  onChange={(e) => setEditHHForm({ ...editHHForm, householdHeadId: e.target.value })}
+                  options={residentOptions}
+                  placeholder="Select Household Head..."
+                />
+              </div>
+              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-4">
+                <button type="button" onClick={() => setShowEditHHModal(false)}
+                  className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
+                >Cancel</button>
+                <button type="submit" disabled={editHHSaving}
+                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                >{editHHSaving ? "Saving…" : "Save Changes"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Family Modal */}
+      {showEditFamilyModal && editFamily && (
+        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
+            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+              <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
+                <span>✏️</span>
+                <span>Edit Family {editFamily.familyId}</span>
+              </h3>
+              <button onClick={() => setShowEditFamilyModal(false)} className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            <form onSubmit={handleEditFamily} className="p-6 space-y-4 font-sans">
+              <div className="flex flex-col">
+                <label className={labelClass}>Family Head (Resident)</label>
+                <SearchableSelect
+                  name="familyHeadId"
+                  value={editFamilyForm.familyHeadId}
+                  onChange={(e) => setEditFamilyForm({ ...editFamilyForm, familyHeadId: e.target.value })}
+                  options={residentOptions.filter(opt =>
+                    opt.value === "" || (residentsList || residents || []).find(r => r.residentId === opt.value)?.householdId === editFamily.householdId
+                  )}
+                  placeholder="Select Head of Family..."
+                />
+                <p className="text-[10px] text-slate-400 mt-1 font-mono">Only residents in this household are shown.</p>
+              </div>
+              <div className="flex flex-col">
+                <label className={labelClass}>Family Status</label>
+                <select
+                  value={editFamilyForm.familyStatus}
+                  onChange={(e) => setEditFamilyForm({ ...editFamilyForm, familyStatus: e.target.value })}
+                  className={selectClass}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Transferred">Transferred</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4">
+                <button type="button" onClick={() => setShowEditFamilyModal(false)}
+                  className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
+                >Cancel</button>
+                <button type="submit" disabled={editFamilySaving}
+                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                >{editFamilySaving ? "Saving…" : "Save Changes"}</button>
               </div>
             </form>
           </div>

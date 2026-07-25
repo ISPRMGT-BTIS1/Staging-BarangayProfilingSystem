@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useData } from "../../../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
-import { ApplicationBarangayClearancePreview } from "../templates/application-barangay-clearance/preview.tsx";
+import GuardianCertificatePreview from "../templates/certification-of-guardianship/preview.tsx";
 import { logCertificateRequest } from "../utils/logCertificateRequest";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -12,37 +12,53 @@ function getFullName(r) {
   return `${r.firstName}${mid} ${r.lastName}`;
 }
 
+function ordinalSuffix(day) {
+  const j = day % 10;
+  const k = day % 100;
+  if (j === 1 && k !== 11) return "st";
+  if (j === 2 && k !== 12) return "nd";
+  if (j === 3 && k !== 13) return "rd";
+  return "th";
+}
+
+// turns "2026-07-22" into "22nd day of July 2026"
+function formatIssuedDate(isoDate) {
+  if (!isoDate) return "";
+  const d = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  const day = d.getDate();
+  const month = d.toLocaleString("en-US", { month: "long" });
+  const year = d.getFullYear();
+  return `${day}${ordinalSuffix(day)} day of ${month} ${year}`;
+}
+
+function todayIso() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 // ─── component ──────────────────────────────────────────────────────────────
 
-/**
- * ApplicationBarangayClearanceModal
- *
- * Two-panel modal:
- *   Left  → data-entry form (resident picker + overrideable fields)
- *   Right → live preview of the printable certificate
- *
- * Props:
- *   isOpen   — controls visibility
- *   onClose  — called when user dismisses the modal
- */
-export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
-  const { residents, helpers: { calculateAge, getFullAddress } } = useData();
+export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
+  const { residents, helpers: { getFullAddress } } = useData();
   const { currentUser } = useAuth();
   const printRef = useRef(null);
 
-  // ── resident search state ──────────────────────────────────────────────
+  // ── guardian resident search state ─────────────────────────────────────
   const [residentSearch, setResidentSearch] = useState("");
   const [selectedResident, setSelectedResident] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
-  // ── overrideable fields ────────────────────────────────────────────────
-  const [name, setName] = useState("");
+  // ── overrideable fields (match GuardianCertificateData) ────────────────
+  const [guardianName, setGuardianName] = useState("");
   const [address, setAddress] = useState("");
+  const [studentName, setStudentName] = useState("");
   const [age, setAge] = useState("");
-  const [gender, setGender] = useState("");
   const [purpose, setPurpose] = useState("");
-  const [parentName, setParentName] = useState("");
+  const [issuedDateRaw, setIssuedDateRaw] = useState(todayIso());
 
   // ── stage: 'form' | 'preview' ─────────────────────────────────────────
   const [stage, setStage] = useState("form");
@@ -63,31 +79,21 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
     if (isOpen) {
       setResidentSearch("");
       setSelectedResident(null);
-      setName("");
+      setGuardianName("");
       setAddress("");
+      setStudentName("");
       setAge("");
-      setGender("");
       setPurpose("");
-      setParentName("");
+      setIssuedDateRaw(todayIso());
       setStage("form");
     }
   }, [isOpen]);
 
-  // auto-fill fields when a resident is picked
+  // auto-fill guardian fields when a resident is picked
   useEffect(() => {
     if (!selectedResident) return;
-    setName(getFullName(selectedResident));
+    setGuardianName(getFullName(selectedResident));
     setAddress(getFullAddress(selectedResident.householdId));
-    setAge(String(calculateAge(selectedResident.birthDate)));
-    setGender(selectedResident.sex || "");
-    // auto-fill parent if minor (< 18)
-    const resAge = calculateAge(selectedResident.birthDate);
-    if (resAge < 18 && selectedResident.parentId) {
-      const parent = residents.find((r) => r.residentId === selectedResident.parentId);
-      if (parent) setParentName(getFullName(parent));
-    } else {
-      setParentName("");
-    }
   }, [selectedResident]);
 
   // ── resident dropdown options ────────────────────────────────────────
@@ -100,14 +106,25 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
         return full.includes(q) || id.includes(q);
       }).slice(0, 8);
 
-  // ── preview data object ──────────────────────────────────────────────
-  const previewData = { name, address, age, gender, purpose, parentName };
+  // ── derived / preview data ─────────────────────────────────────────────
+  const issuedDate = formatIssuedDate(issuedDateRaw);
+  const previewData = {
+    guardianName,
+    studentName,
+    address,
+    age,
+    purpose,
+    issuedDate,
+  };
+
+  const isComplete =
+    !!(guardianName && address && studentName && age && purpose && issuedDate);
 
   // ── print handler ────────────────────────────────────────────────────
   const handlePrint = () => {
     logCertificateRequest({
-      certificateType: 'APPLICATION_BARANGAY_CLEARANCE',
-      residentName: name || null,
+      certificateType: 'CERTIFICATION_OF_GUARDIANSHIP',
+      residentName: guardianName || null,
       residentId: selectedResident?.residentId || null,
       purpose: purpose || null,
       issuedBy: currentUser?.userId || null,
@@ -119,22 +136,26 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
 
   // ─────────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(22, 50, 74, 0.55)", backdropFilter: "blur(2px)" }}
-    >
-      <div
-        className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col"
-        style={{ width: "980px", maxWidth: "96vw", maxHeight: "92vh", overflow: "hidden" }}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+      
+      {/* Print stylesheet to remove browser URL and Date headers */}
+      <style>
+        {`@media print { 
+          @page { margin: 0; } 
+          body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+        }`}
+      </style>
+
+      <div className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col w-[980px] max-w-[96vw] max-h-[92vh] overflow-hidden print:w-full print:max-w-none print:h-auto print:max-h-none print:overflow-visible print:border-none print:shadow-none">
+        
         {/* ── Header ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0 print:hidden">
           <div>
             <h2 className="text-base font-serif font-bold text-[#16324A]">
-              Application for Barangay Clearance / Certification Slip
+              Certification of Guardianship
             </h2>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-0.5">
-              APPLICATION_BARANGAY_CLEARANCE
+              CERTIFICATION_OF_GUARDIANSHIP
             </p>
           </div>
 
@@ -176,21 +197,21 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
         </div>
 
         {/* ── Body ──────────────────────────────────────────────────────── */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden print:overflow-visible">
 
           {/* ── Left: Data Entry Form ────────────────────────────────── */}
           <div
-            className={`flex flex-col border-r border-[#D1D7CE] overflow-y-auto ${
+            className={`flex flex-col border-r border-[#D1D7CE] overflow-y-auto print:hidden ${
               stage === "preview" ? "hidden md:flex" : "flex"
             }`}
             style={{ width: "400px", minWidth: "340px" }}
           >
             <div className="p-6 space-y-5 flex-1">
 
-              {/* Resident picker */}
+              {/* Guardian resident picker */}
               <div>
                 <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1.5">
-                  Select Resident
+                  Select Guardian (Resident)
                 </label>
                 <div className="relative" ref={dropdownRef}>
                   <div className="relative">
@@ -239,7 +260,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                 </div>
                 {selectedResident && (
                   <p className="text-[10px] text-emerald-600 mt-1 font-mono">
-                    ✓ Fields auto-filled from resident record — edit below if needed.
+                    ✓ Guardian name &amp; address auto-filled — edit below if needed.
                   </p>
                 )}
               </div>
@@ -249,14 +270,14 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                   Certificate Fields
                 </p>
 
-                {/* NAME */}
-                <FormField label="Name" required>
+                {/* GUARDIAN NAME */}
+                <FormField label="Guardian Name" required>
                   <input
                     type="text"
                     className={inputCls}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Full name of applicant"
+                    value={guardianName}
+                    onChange={(e) => setGuardianName(e.target.value)}
+                    placeholder="Full name of guardian"
                   />
                 </FormField>
 
@@ -271,8 +292,19 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                   />
                 </FormField>
 
-                {/* AGE */}
-                <FormField label="Age" required>
+                {/* STUDENT / WARD NAME */}
+                <FormField label="Name of Student / Ward" required>
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="Full name of student"
+                  />
+                </FormField>
+
+                {/* AGE (of student) */}
+                <FormField label="Age of Student" required>
                   <input
                     type="number"
                     min={0}
@@ -280,21 +312,8 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                     className={inputCls}
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
-                    placeholder="e.g. 25"
+                    placeholder="e.g. 12"
                   />
-                </FormField>
-
-                {/* GENDER */}
-                <FormField label="Gender / Kasarian" required>
-                  <select
-                    className={inputCls}
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                  >
-                    <option value="">Select…</option>
-                    <option value="Male">Male / Lalaki</option>
-                    <option value="Female">Female / Babae</option>
-                  </select>
                 </FormField>
 
                 {/* PURPOSE */}
@@ -304,25 +323,29 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                     rows={3}
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="e.g. Employment, Loan application…"
+                    placeholder="e.g. School enrollment, Scholarship application…"
                   />
                 </FormField>
 
-                {/* PARENT/S IF MINOR */}
-                <FormField label="Name of Parent/s (if minor)">
+                {/* ISSUED DATE */}
+                <FormField label="Issued Date" required>
                   <input
-                    type="text"
+                    type="date"
                     className={inputCls}
-                    value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
-                    placeholder="Leave blank if not applicable"
+                    value={issuedDateRaw}
+                    onChange={(e) => setIssuedDateRaw(e.target.value)}
                   />
+                  {issuedDate && (
+                    <p className="text-[10px] text-slate-400 mt-1 font-mono">
+                      Will print as: “{issuedDate}”
+                    </p>
+                  )}
                 </FormField>
               </div>
             </div>
 
             {/* ── Form action bar ──────────────────────────────────── */}
-            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
               <button
                 onClick={onClose}
                 className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#F2F4F1] cursor-pointer transition-all"
@@ -339,7 +362,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                 </button>
                 <button
                   onClick={handlePrint}
-                  disabled={!name || !address || !age || !gender || !purpose}
+                  disabled={!isComplete}
                   className="text-xs font-mono uppercase tracking-wider px-4 py-2 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg className="h-3.5 w-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
@@ -355,17 +378,17 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
 
           {/* ── Right: Live Preview ──────────────────────────────────── */}
           <div
-            className={`flex-1 overflow-y-auto bg-[#E8EBE5] flex flex-col items-center py-8 ${
+            className={`flex-1 overflow-y-auto bg-[#E8EBE5] flex flex-col items-center py-8 print:p-0 print:bg-white print:block print:overflow-visible ${
               stage === "form" ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3 print:hidden">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
                 Print Preview
               </span>
               <button
                 onClick={handlePrint}
-                disabled={!name || !address || !age || !gender || !purpose}
+                disabled={!isComplete}
                 className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <svg className="h-3 w-3 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
@@ -377,15 +400,12 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
               </button>
             </div>
 
-            <div className="shadow-2xl">
-              <ApplicationBarangayClearancePreview
-                ref={printRef}
-                data={previewData}
-              />
+            <div className="shadow-2xl origin-top scale-[0.65] mb-[-35%] print:scale-100 print:mb-0 print:shadow-none print:flex print:justify-center print:w-full">
+              <GuardianCertificatePreview ref={printRef} data={previewData} />
             </div>
 
-            {(!name || !address || !age || !gender || !purpose) && (
-              <p className="mt-4 text-[11px] text-slate-500 font-mono italic">
+            {!isComplete && (
+              <p className="mt-4 text-[11px] text-slate-500 font-mono italic print:hidden">
                 Fill in the required fields to enable printing.
               </p>
             )}
