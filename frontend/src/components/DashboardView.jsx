@@ -97,15 +97,15 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* Greetings & Milestones */}
-      <section className="ledger-container p-5 border-l-4 border-[#E8198A]">
+      <section className="ledger-container p-5 border-l-4 border-[#8A244E]">
         <div className="flex justify-between items-center mb-3">
           <div>
-            <h2 className="text-xl text-[#E8198A] font-serif font-bold">Magandang Araw!</h2>
+            <h2 className="text-xl text-[#8A244E] font-serif font-bold">Magandang Araw!</h2>
             <p className="text-sm text-slate-500">Welcome to the Brgy. 46 Zone 6 System Console. Here are today's record updates.</p>
           </div>
           <button
             onClick={handlePrint}
-            className="border border-[#E8198A] hover:bg-[#E8198A] hover:text-white text-[#E8198A] text-xs font-semibold px-3 py-1.5 uppercase tracking-wider rounded-lg cursor-pointer transition-colors inline-flex items-center space-x-1.5 bg-white shadow-2xs"
+            className="border border-[#8A244E] hover:bg-[#8A244E] hover:text-white text-[#8A244E] text-xs font-semibold px-3 py-1.5 uppercase tracking-wider rounded-lg cursor-pointer transition-colors inline-flex items-center space-x-1.5 bg-white shadow-2xs"
           >
             <svg className="h-3.5 w-3.5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9" />
@@ -117,13 +117,13 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
         </div>
 
         {/* Celebrating list */}
-        <div className="bg-[#FCE4EC]/60 border border-[#F8BBD9] p-3.5 rounded-lg">
-          <h3 className="text-xs uppercase font-mono tracking-wider text-[#E8198A] font-bold mb-2.5 flex items-center justify-between">
+        <div className="bg-[#F7EEF2]/70 border border-[#E4C7D5] p-3.5 rounded-lg">
+          <h3 className="text-xs uppercase font-mono tracking-wider text-[#8A244E] font-bold mb-2.5 flex items-center justify-between">
             <span className="flex items-center space-x-1.5">
               <span>🎂</span>
               <span>{isUpcoming ? "Upcoming Birthday Celebrators" : "Residents Celebrating Today"}</span>
             </span>
-            <span className="text-[10px] bg-[#E8198A]/10 text-[#E8198A] px-2 py-0.5 rounded font-sans font-semibold">
+            <span className="text-[10px] bg-[#8A244E]/10 text-[#8A244E] px-2 py-0.5 rounded font-sans font-semibold">
               {celebrators.length} {celebrators.length === 1 ? 'Resident' : 'Residents'}
             </span>
           </h3>
@@ -131,22 +131,22 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {celebrators.length > 0 ? (
               celebrators.map(c => (
-                <div key={c.residentId} className="bg-white p-3 border border-[#F8BBD9] rounded-lg shadow-2xs flex justify-between items-center">
+                <div key={c.residentId} className="bg-white p-3 border border-[#E4C7D5] rounded-lg shadow-2xs flex justify-between items-center">
                   <div>
                     <h4 className="font-bold text-sm text-[#1A1A2E]">{getResidentShortName(c) || `${c.firstName || ''} ${c.lastName || ''}`}</h4>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Age: {calculateAge(c.birthDate) || "N/A"} &bull; <span className="font-mono text-[10px] bg-[#FCE4EC] text-[#E8198A] px-1.5 py-0.5 border border-[#F8BBD9] rounded font-semibold">ID: {c.residentId}</span>
+                      Age: {calculateAge(c.birthDate) || "N/A"} &bull; <span className="font-mono text-[10px] bg-[#F7EEF2] text-[#8A244E] px-1.5 py-0.5 border border-[#E4C7D5] rounded font-semibold">ID: {c.residentId}</span>
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#E8198A]/10 text-[#E8198A] border border-[#E8198A]/20">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#8A244E]/10 text-[#8A244E] border border-[#8A244E]/20">
                       🎉 {isUpcoming ? "Upcoming" : "Today!"}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="col-span-3 text-center py-4 text-slate-400 text-xs italic bg-white rounded-lg border border-[#F8BBD9]/50">
+              <div className="col-span-3 text-center py-4 text-slate-400 text-xs italic bg-white rounded-lg border border-[#E4C7D5]/50">
                 No birthday celebrators found in records.
               </div>
             )}

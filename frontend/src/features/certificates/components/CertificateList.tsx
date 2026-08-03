@@ -16,10 +16,10 @@ interface CertificateCardProps {
 
 function CertificateCard({ type, onRequest }: CertificateCardProps) {
   return (
-    <div className="p-4 flex items-center justify-between hover:shadow-sm transition-all border border-[#F8BBD9] rounded-lg bg-white">
+    <div className="p-4 flex items-center justify-between hover:shadow-sm transition-all border border-[#E4C7D5] rounded-lg bg-white">
       <div className="flex items-center space-x-3.5">
-        <div className="h-10 w-10 rounded-lg bg-[#FCE4EC] border border-[#F8BBD9] flex items-center justify-center flex-shrink-0">
-          <svg className="h-5 w-5 text-[#E8198A] fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="h-10 w-10 rounded-lg bg-[#F7EEF2] border border-[#E4C7D5] flex items-center justify-center flex-shrink-0">
+          <svg className="h-5 w-5 text-[#8A244E] fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
             <rect x="9" y="3" width="6" height="4" rx="2" />
             <path d="M9 12h6" /><path d="M9 16h4" />

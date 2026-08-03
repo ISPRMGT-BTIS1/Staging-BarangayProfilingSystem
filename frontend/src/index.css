@@ -4,17 +4,17 @@
   --font-sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-serif: "Lora", Georgia, serif;
   
-  /* ── New pink/green color scheme ── */
-  --color-primary: #E8198A;
-  --color-primary-dark: #C4157A;
-  --color-primary-light: #FCE4EC;
+  /* ── Muted Rosewood / Soft Blush palette ── */
+  --color-primary: #8A244E;
+  --color-primary-dark: #6A1838;
+  --color-primary-light: #F7EEF2;
   --color-primary-navy: #1A1A2E;
-  --color-bg-paper: #FCE4EC;
+  --color-bg-paper: #F7EEF2;
   --color-seal-active: #2D5F2E;
   --color-seal-inactive: #9B3D30;
   --color-highlight-gold: #C8932B;
-  --color-ledger-border: #F8BBD9;
-  --color-ledger-row-alt: #FFF0F7;
+  --color-ledger-border: #E4C7D5;
+  --color-ledger-row-alt: #FCF7F9;
   --color-btn-green: #2D5F2E;
   --color-btn-green-hover: #1B4020;
 }
@@ -75,7 +75,7 @@
   }
 
   .ledger-table tr:hover {
-    @apply bg-[#FFF0F7];
+    @apply bg-[#FCF7F9];
   }
   
   .tabular-numbers {

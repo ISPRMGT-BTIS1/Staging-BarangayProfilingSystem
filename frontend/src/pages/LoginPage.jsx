@@ -24,16 +24,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCE4EC] flex items-center justify-center p-4">
-      <div className="relative w-full max-w-sm">
-        {/* Login Card */}
-        <div className="bg-[#E8198A] rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header with Avatar Icon */}
-          <div className="px-8 pt-10 pb-6 text-center">
-            {/* Avatar circle */}
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#F2AECC]/50 mb-5">
-              <svg className="h-14 w-14 fill-[#D1D1D1]" viewBox="0 0 24 24">
-                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+    <div className="min-h-screen bg-[#F7EEF2] flex items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-md">
+        {/* Main Card */}
+        <div className="bg-[#8A244E] rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-8 pt-8 pb-6 text-center">
+            <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
+              <svg className="h-8 w-8 text-white fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 18h16" />
+                <path d="M4 10h16" />
+                <path d="M5 10v8" />
+                <path d="M12 10v8" />
+                <path d="M19 10v8" />
+                <path d="M3 6h18" />
+                <path d="m12 2-9 4h18Z" />
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-white tracking-wide font-serif">
@@ -46,10 +51,10 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 pb-6 space-y-4">
+          <form onSubmit={handleSubmit} className="bg-white p-8 space-y-5">
             {/* Error Message */}
             {error && (
-              <div className="bg-white/20 border border-white/30 text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center space-x-2">
+              <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center space-x-2">
                 <svg className="h-4 w-4 stroke-current fill-none flex-shrink-0" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="15" y1="9" x2="9" y2="15" />

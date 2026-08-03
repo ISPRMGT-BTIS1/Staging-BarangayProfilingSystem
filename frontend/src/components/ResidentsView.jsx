@@ -489,7 +489,7 @@ export default function ResidentsView({
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#E8198A]">Resident Registry Ledger</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#8A244E]">Resident Registry Ledger</h1>
           <p className="text-sm text-slate-500 font-sans">Official profile log database for verifying residency and program qualifications</p>
         </div>
         <div className="flex items-center space-x-3">
@@ -502,7 +502,7 @@ export default function ResidentsView({
           />
           <button
             onClick={() => fileInputRef.current.click()}
-            className="border border-[#E8198A] text-[#E8198A] hover:bg-[#E8198A] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 bg-white"
+            className="border border-[#8A244E] text-[#8A244E] hover:bg-[#8A244E] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 bg-white"
           >
             <span>📄</span>
             <span>Import CSV</span>
