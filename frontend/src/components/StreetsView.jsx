@@ -269,20 +269,7 @@ export default function StreetsView() {
                 />
               </div>
 
-              <div className="flex flex-col">
-                <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Barangay Jurisdiction</label>
-                <select
-                  value={newBarangayId}
-                  onChange={(e) => setNewBarangayId(e.target.value)}
-                  required
-                  className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
-                >
-                  <option value="">Select Barangay...</option>
-                  {barangays.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
+
 
               {/* Form Actions */}
               <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">

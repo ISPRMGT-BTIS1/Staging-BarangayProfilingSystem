@@ -44,8 +44,47 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
   const movedCount = currentResidents.filter(r => r.residencyStatus === "Moved").length;
   const inactiveCount = currentResidents.filter(r => r.residencyStatus === "Inactive").length;
 
-  // Milestone records: residents celebrating today (mocked to filter a few residents)
-  const celebrators = currentResidents.filter(r => r.residencyStatus === "Active" && ["R-0001", "R-0005", "R-0013"].includes(r.residentId));
+  // Milestone records: residents celebrating birthday today
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1; // 1-12
+  const currentDay = today.getDate();
+
+  const activeResidents = currentResidents.filter(r => r.residencyStatus !== "Deceased" && r.residencyStatus !== "Inactive");
+
+  // 1. Check residents whose birthDate month & day match today
+  let celebrators = activeResidents.filter(r => {
+    if (!r.birthDate) return false;
+    const parts = String(r.birthDate).split("-");
+    if (parts.length >= 3) {
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      return m === currentMonth && d === currentDay;
+    }
+    const bd = new Date(r.birthDate);
+    return bd.getMonth() + 1 === currentMonth && bd.getDate() === currentDay;
+  });
+
+  let isUpcoming = false;
+  // 2. If no exact match today, find nearest upcoming birthdays or fallback to active residents
+  if (celebrators.length === 0 && activeResidents.length > 0) {
+    const withBirthdays = activeResidents.filter(r => r.birthDate).map(r => {
+      const parts = String(r.birthDate).split("-");
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      let daysUntil = (m - currentMonth) * 31 + (d - currentDay);
+      if (daysUntil < 0) daysUntil += 365;
+      return { resident: r, daysUntil };
+    });
+
+    if (withBirthdays.length > 0) {
+      withBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
+      celebrators = withBirthdays.slice(0, 3).map(item => item.resident);
+      isUpcoming = true;
+    } else {
+      // Fallback: show first 3 active residents as sample celebrators
+      celebrators = activeResidents.slice(0, 3);
+    }
+  }
 
   const handlePrint = () => {
     if (onPrintBirthdays) {
@@ -58,15 +97,15 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* Greetings & Milestones */}
-      <section className="ledger-container p-5 border-l-4 border-[#16324A]">
+      <section className="ledger-container p-5 border-l-4 border-[#E8198A]">
         <div className="flex justify-between items-center mb-3">
           <div>
-            <h2 className="text-xl text-[#16324A] font-serif font-bold">Magandang Araw!</h2>
-            <p className="text-sm text-slate-500">Welcome to the Brgy. System Console. Here are today's record updates.</p>
+            <h2 className="text-xl text-[#E8198A] font-serif font-bold">Magandang Araw!</h2>
+            <p className="text-sm text-slate-500">Welcome to the Brgy. 46 Zone 6 System Console. Here are today's record updates.</p>
           </div>
           <button
             onClick={handlePrint}
-            className="border border-[#16324A] hover:bg-[#16324A] hover:text-white text-[#16324A] text-xs font-semibold px-3 py-1.5 uppercase tracking-wider rounded-xs cursor-pointer transition-colors inline-flex items-center space-x-1.5"
+            className="border border-[#E8198A] hover:bg-[#E8198A] hover:text-white text-[#E8198A] text-xs font-semibold px-3 py-1.5 uppercase tracking-wider rounded-lg cursor-pointer transition-colors inline-flex items-center space-x-1.5 bg-white shadow-2xs"
           >
             <svg className="h-3.5 w-3.5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9" />
@@ -78,27 +117,39 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
         </div>
 
         {/* Celebrating list */}
-        <div className="bg-[#F2F4F1]/60 border border-[#D1D7CE] p-3 rounded-xs">
-          <h3 className="text-xs uppercase font-mono tracking-wider text-slate-500 font-semibold mb-2 flex items-center space-x-1.5">
-            <svg className="h-3.5 w-3.5 stroke-current fill-none text-[#C8932B]" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            <span>Residents Celebrating Today</span>
+        <div className="bg-[#FCE4EC]/60 border border-[#F8BBD9] p-3.5 rounded-lg">
+          <h3 className="text-xs uppercase font-mono tracking-wider text-[#E8198A] font-bold mb-2.5 flex items-center justify-between">
+            <span className="flex items-center space-x-1.5">
+              <span>🎂</span>
+              <span>{isUpcoming ? "Upcoming Birthday Celebrators" : "Residents Celebrating Today"}</span>
+            </span>
+            <span className="text-[10px] bg-[#E8198A]/10 text-[#E8198A] px-2 py-0.5 rounded font-sans font-semibold">
+              {celebrators.length} {celebrators.length === 1 ? 'Resident' : 'Residents'}
+            </span>
           </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {celebrators.map(c => (
-              <div key={c.residentId} className="bg-white p-3 border border-[#D1D7CE] rounded-xs shadow-2xs flex justify-between items-center">
-                <div>
-                  <h4 className="font-semibold text-sm text-[#16324A]">{getResidentShortName(c)}</h4>
-                  <p className="text-xs text-slate-500">
-                    Age: {calculateAge(c.birthDate)} &bull; <span className="font-mono text-[10px] bg-[#F2F4F1] px-1 border border-[#D1D7CE] rounded">{c.residentId}</span>
-                  </p>
+            {celebrators.length > 0 ? (
+              celebrators.map(c => (
+                <div key={c.residentId} className="bg-white p-3 border border-[#F8BBD9] rounded-lg shadow-2xs flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-sm text-[#1A1A2E]">{getResidentShortName(c) || `${c.firstName || ''} ${c.lastName || ''}`}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Age: {calculateAge(c.birthDate) || "N/A"} &bull; <span className="font-mono text-[10px] bg-[#FCE4EC] text-[#E8198A] px-1.5 py-0.5 border border-[#F8BBD9] rounded font-semibold">ID: {c.residentId}</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#E8198A]/10 text-[#E8198A] border border-[#E8198A]/20">
+                      🎉 {isUpcoming ? "Upcoming" : "Today!"}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="seal-stamped-gold text-[9px] scale-90">Celebrator</span>
-                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-4 text-slate-400 text-xs italic bg-white rounded-lg border border-[#F8BBD9]/50">
+                No birthday celebrators found in records.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -118,12 +169,8 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
           </div>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center bg-[#F9FAF8] p-2 border border-[#D1D7CE]/40 rounded-xs">
-              <span className="font-medium text-slate-600">Barangay San Jose</span>
-              <span className="font-mono font-bold text-[#16324A] bg-[#16324A]/5 px-2 py-0.5 rounded-sm border border-[#16324A]/10 tabular-numbers">{brgy1Residents}</span>
-            </div>
-            <div className="flex justify-between items-center bg-[#F9FAF8] p-2 border border-[#D1D7CE]/40 rounded-xs">
-              <span className="font-medium text-slate-600">Barangay Santa Isabel</span>
-              <span className="font-mono font-bold text-[#16324A] bg-[#16324A]/5 px-2 py-0.5 rounded-sm border border-[#16324A]/10 tabular-numbers">{brgy2Residents}</span>
+              <span className="font-medium text-slate-600">Brgy. 46 Zone 6</span>
+              <span className="font-mono font-bold text-[#16324A] bg-[#16324A]/5 px-2 py-0.5 rounded-sm border border-[#16324A]/10 tabular-numbers">{totalResidentsCount}</span>
             </div>
           </div>
         </div>
@@ -141,12 +188,8 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
           </div>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center bg-[#F9FAF8] p-2 border border-[#D1D7CE]/40 rounded-xs">
-              <span className="font-medium text-slate-600">Barangay San Jose</span>
-              <span className="font-mono font-bold text-[#16324A] bg-[#16324A]/5 px-2 py-0.5 rounded-sm border border-[#16324A]/10 tabular-numbers">{brgy1HouseholdsCount}</span>
-            </div>
-            <div className="flex justify-between items-center bg-[#F9FAF8] p-2 border border-[#D1D7CE]/40 rounded-xs">
-              <span className="font-medium text-slate-600">Barangay Santa Isabel</span>
-              <span className="font-mono font-bold text-[#16324A] bg-[#16324A]/5 px-2 py-0.5 rounded-sm border border-[#16324A]/10 tabular-numbers">{brgy2HouseholdsCount}</span>
+              <span className="font-medium text-slate-600">Brgy. 46 Zone 6</span>
+              <span className="font-mono font-bold text-[#16324A] bg-[#16324A]/5 px-2 py-0.5 rounded-sm border border-[#16324A]/10 tabular-numbers">{totalHouseholdsCount}</span>
             </div>
           </div>
         </div>

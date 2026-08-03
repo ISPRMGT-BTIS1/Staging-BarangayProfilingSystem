@@ -3,7 +3,7 @@ import React from 'react'
 export interface ApplicationBarangayClearanceData {
   /** Full name — e.g. "Juan Santos Dela Cruz" */
   name: string
-  /** Street address — e.g. "12A Rizal Avenue, Barangay San Jose" */
+  /** Street address — e.g. "12A Rizal Avenue, Barangay 46 Zone 6" */
   address: string
   /** Age in years */
   age: number | string

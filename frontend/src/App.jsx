@@ -43,7 +43,7 @@ function AuthenticatedApp() {
   }, [loading, residents]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-[#16324A] bg-[#F2F4F1]">Loading data from Supabase...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-[#E8198A] bg-[#FCE4EC] text-lg font-semibold font-sans">Loading data from Supabase...</div>;
   }
 
   const handleNewProfiling = () => {
@@ -127,17 +127,11 @@ function AuthenticatedApp() {
                   Barangay Profiles Config
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="bg-[#F9FAF8] border border-[#D1D7CE] p-3 rounded-xs">
-                    <p className="font-bold text-[#16324A]">Barangay 1 Profile</p>
-                    <p className="text-slate-500 mt-1">Official Name: Barangay San Jose</p>
-                    <p className="text-slate-500">Sector Code: BRGY-1</p>
-                    <p className="text-slate-500">Official Seal Symbol: 🏛️ Seal Stamped A</p>
-                  </div>
-                  <div className="bg-[#F9FAF8] border border-[#D1D7CE] p-3 rounded-xs">
-                    <p className="font-bold text-[#16324A]">Barangay 2 Profile</p>
-                    <p className="text-slate-500 mt-1">Official Name: Barangay Santa Isabel</p>
-                    <p className="text-slate-500">Sector Code: BRGY-2</p>
-                    <p className="text-slate-500">Official Seal Symbol: 🏛️ Seal Stamped B</p>
+                  <div className="bg-[#F9FAF8] border border-[#D1D7CE] p-3 rounded-xs col-span-2">
+                    <p className="font-bold text-[#E8198A]">Barangay Profile Config</p>
+                    <p className="text-slate-500 mt-1">Official Name: Barangay 46 Zone 6</p>
+                    <p className="text-slate-500">Municipality / City: Lungsod Pasay (Pasay City), Kalakhang Maynila</p>
+                    <p className="text-slate-500">Sector Code: BRGY-46-Z6</p>
                   </div>
                 </div>
               </div>
@@ -197,12 +191,14 @@ function AuthenticatedApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F4F1] flex flex-col font-sans text-[#16324A]">
+    <div className="min-h-screen bg-[#FCE4EC] flex flex-col font-sans text-[#1A1A2E]">
       {/* Top Bar matching wireframe */}
       <TopBar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onNewProfiling={handleNewProfiling}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
 
       {/* Main Shell (Sidebar + Content View) */}
@@ -210,7 +206,7 @@ function AuthenticatedApp() {
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
         {/* Main Content Pane */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#F2F4F1]">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#FCE4EC]">
           {renderActiveView()}
         </main>
       </div>

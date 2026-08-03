@@ -4,13 +4,19 @@
   --font-sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-serif: "Lora", Georgia, serif;
   
-  --color-primary-navy: #16324A;
-  --color-bg-paper: #F2F4F1;
-  --color-seal-active: #2E5A44;
+  /* ── New pink/green color scheme ── */
+  --color-primary: #E8198A;
+  --color-primary-dark: #C4157A;
+  --color-primary-light: #FCE4EC;
+  --color-primary-navy: #1A1A2E;
+  --color-bg-paper: #FCE4EC;
+  --color-seal-active: #2D5F2E;
   --color-seal-inactive: #9B3D30;
   --color-highlight-gold: #C8932B;
-  --color-ledger-border: #D1D7CE;
-  --color-ledger-row-alt: #F9FAF8;
+  --color-ledger-border: #F8BBD9;
+  --color-ledger-row-alt: #FFF0F7;
+  --color-btn-green: #2D5F2E;
+  --color-btn-green-hover: #1B4020;
 }
 
 @layer base {
@@ -69,7 +75,7 @@
   }
 
   .ledger-table tr:hover {
-    @apply bg-[#eff3f0];
+    @apply bg-[#FFF0F7];
   }
   
   .tabular-numbers {

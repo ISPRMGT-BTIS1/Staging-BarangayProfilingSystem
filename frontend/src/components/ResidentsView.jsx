@@ -19,7 +19,7 @@ export default function ResidentsView({
   setResidentsList,
   onViewResident
 }) {
-  const { currentUser } = useAuth();
+  const { currentUser, canEdit = true } = useAuth();
   const {
     residents,
     households,
@@ -92,19 +92,16 @@ export default function ResidentsView({
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Cascading filters
-  const filteredStreets = selectedBarangayId
-    ? streets.filter(s => String(s.barangayId) === String(selectedBarangayId))
-    : [];
+  // Cascading filters — all streets belong to Brgy. 46 Zone 6
+  const filteredStreets = streets;
 
-  const filteredHouseholds = selectedBarangayId
+  const filteredHouseholds = selectedStreetId
     ? households.filter(h => {
         const addr = addresses.find(a => a.addressId === h.addressId);
         if (!addr) return false;
         const street = streets.find(s => s.streetId === addr.streetId);
         if (!street) return false;
-        if (selectedStreetId && String(street.streetId) !== String(selectedStreetId)) return false;
-        return String(street.barangayId) === String(selectedBarangayId);
+        return String(street.streetId) === String(selectedStreetId);
       })
     : households;
 
@@ -492,10 +489,10 @@ export default function ResidentsView({
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Resident Registry Ledger</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#E8198A]">Resident Registry Ledger</h1>
           <p className="text-sm text-slate-500 font-sans">Official profile log database for verifying residency and program qualifications</p>
         </div>
-        <div>
+        <div className="flex items-center space-x-3">
           <input 
             type="file" 
             accept=".csv" 
@@ -505,11 +502,20 @@ export default function ResidentsView({
           />
           <button
             onClick={() => fileInputRef.current.click()}
-            className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2"
+            className="border border-[#E8198A] text-[#E8198A] hover:bg-[#E8198A] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 bg-white"
           >
             <span>📄</span>
             <span>Import CSV</span>
           </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowNewProfilingModal(true)}
+              className="bg-[#2D5F2E] hover:bg-[#1B4020] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
+            >
+              <span className="text-sm font-bold">+</span>
+              <span>New Profiling</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -540,9 +546,8 @@ export default function ResidentsView({
               onChange={(e) => setBarangayFilter(e.target.value)}
               className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
             >
-              <option value="all">ALL BARANGAYS</option>
-              <option value="Barangay San Jose">BARANGAY SAN JOSE</option>
-              <option value="Barangay Santa Isabel">BARANGAY SANTA ISABEL</option>
+              <option value="all">ALL SECTORS</option>
+              <option value="Brgy. 46 Zone 6">BRGY. 46 ZONE 6</option>
             </select>
           </div>
 
@@ -790,17 +795,8 @@ export default function ResidentsView({
                 {expandedSections.address && (
                   <div className="p-4 grid grid-cols-2 gap-4">
                     <div className="flex flex-col">
-                      <label className={labelClass}>Barangay</label>
-                      <select value={selectedBarangayId} onChange={handleBarangayChange} className={selectClass}>
-                        <option value="">Select Barangay...</option>
-                        {barangays.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col">
                       <label className={labelClass}>Street</label>
-                      <select value={selectedStreetId} onChange={handleStreetChange} className={selectClass} disabled={!selectedBarangayId}>
+                      <select value={selectedStreetId} onChange={handleStreetChange} className={selectClass}>
                         <option value="">Select Street...</option>
                         {filteredStreets.map(s => (
                           <option key={s.streetId} value={s.streetId}>{s.streetName}</option>

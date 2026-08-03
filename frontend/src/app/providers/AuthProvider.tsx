@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState } from 'react'
-import { roles, barangays } from '@/mocks'
 import { supabase } from '@/utils/supabaseClient'
+import {
+  ROLE,
+  ROLE_META,
+  ROLE_PERMISSIONS,
+  checkPermission,
+  type Permission,
+  type RoleId,
+} from '@/shared/lib/permissions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -12,16 +19,42 @@ interface User {
   roleId: number
   barangayId: number
   isActive: boolean
+  // Joined columns from Supabase select
+  roles?: { role_name: string }
+  barangays?: { barangay_name: string }
 }
 
 interface AuthContextValue {
   currentUser: User | null
-  login: (username: string, password: string) => { success: boolean; error?: string }
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
+
+  // ── Role booleans ──────────────────────────────────────────────────────────
+  /** Brgy. Captain (role 1) */
+  isCaptain: boolean
+  /** Brgy. Secretary (role 2) */
+  isSecretary: boolean
+  /** Brgy. Kagawad (role 3) */
+  isKagawad: boolean
+  /** Tanod (role 4) */
+  isTanod: boolean
+
+  // ── Legacy convenience flags (kept for backward compat) ───────────────────
+  /** Captain or Secretary — full system access */
   isAdmin: boolean
+  /** Kagawad or Tanod — partial access */
   isOfficial: boolean
+
+  // ── Permission check ───────────────────────────────────────────────────────
+  hasPermission: (perm: Permission) => boolean
+  /** Can add/edit/delete data records (false for Tanod) */
+  canEdit: boolean
+
+  // ── Display helpers ────────────────────────────────────────────────────────
   getUserRole: () => string | null
   getUserBarangay: () => string | null
+  getRoleBadge: () => string | null
+  getRoleColor: () => 'pink' | 'teal' | 'slate' | null
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -56,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           passwordHash: u.password_hash,
           isActive: u.is_active,
           roleId: u.role_id,
-          barangayId: u.barangay_id
+          barangayId: u.barangay_id,
         } as User)
         return { success: true }
       }
@@ -72,22 +105,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('access_token')
   }
 
-  const isAdmin = currentUser?.roleId === 1
-  const isOfficial = currentUser?.roleId === 2
+  // ── Role flags ─────────────────────────────────────────────────────────────
+  const roleId = currentUser?.roleId
+  const isCaptain   = roleId === ROLE.CAPTAIN
+  const isSecretary = roleId === ROLE.SECRETARY
+  const isKagawad   = roleId === ROLE.KAGAWAD
+  const isTanod     = roleId === ROLE.TANOD
 
+  // Legacy
+  const isAdmin    = isCaptain || isSecretary
+  const isOfficial = isKagawad || isTanod
+
+  // ── Permission check ───────────────────────────────────────────────────────
+  const hasPermission = (perm: Permission): boolean => checkPermission(roleId, perm)
+
+  /** Tanod is view-only — cannot create or modify records */
+  const canEdit = !isTanod && !!currentUser
+
+  // ── Display helpers ────────────────────────────────────────────────────────
   const getUserRole = () => {
     if (!currentUser) return null
     return (currentUser as any).roles?.role_name || 'Unknown'
   }
 
   const getUserBarangay = () => {
-    if (!currentUser) return null
-    return (currentUser as any).barangays?.barangay_name || 'Unknown'
+    return 'Brgy. 46 Zone 6'
+  }
+
+  const getRoleBadge = () => {
+    if (!roleId) return null
+    return ROLE_META[roleId as RoleId]?.badge ?? null
+  }
+
+  const getRoleColor = (): 'pink' | 'teal' | 'slate' | null => {
+    if (!roleId) return null
+    const color = ROLE_META[roleId as RoleId]?.color
+    if (color === 'pink' || color === 'teal' || color === 'slate') return color
+    return null
   }
 
   return (
     <AuthContext.Provider
-      value={{ currentUser, login, logout, isAdmin, isOfficial, getUserRole, getUserBarangay }}
+      value={{
+        currentUser,
+        login,
+        logout,
+        isCaptain,
+        isSecretary,
+        isKagawad,
+        isTanod,
+        isAdmin,
+        isOfficial,
+        hasPermission,
+        canEdit,
+        getUserRole,
+        getUserBarangay,
+        getRoleBadge,
+        getRoleColor,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -430,8 +430,7 @@ export default function HouseholdsView({
               className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
             >
               <option value="all">ALL SECTORS</option>
-              <option value="Barangay San Jose">BARANGAY SAN JOSE</option>
-              <option value="Barangay Santa Isabel">BARANGAY SANTA ISABEL</option>
+              <option value="Brgy. 46 Zone 6">BRGY. 46 ZONE 6</option>
             </select>
           </div>
 
@@ -768,36 +767,17 @@ export default function HouseholdsView({
             {/* Modal Form */}
             <form onSubmit={handleFormSubmit} className="p-6 space-y-4 font-sans">
               <div className="grid grid-cols-2 gap-4">
-                {/* Barangay */}
-                <div className="flex flex-col">
-                  <label className={labelClass}>Barangay <span className="text-red-600">*</span></label>
-                  <select
-                    value={formData.barangayId}
-                    onChange={handleBarangayChange}
-                    required
-                    className={selectClass}
-                  >
-                    <option value="">Select Barangay...</option>
-                    {barangays.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* Street */}
-                <div className="flex flex-col">
+                <div className="flex flex-col col-span-2">
                   <label className={labelClass}>Street <span className="text-red-600">*</span></label>
                   <select
                     value={formData.streetId}
                     onChange={(e) => setFormData({ ...formData, streetId: e.target.value })}
                     required
-                    disabled={!formData.barangayId}
                     className={selectClass}
                   >
                     <option value="">Select Street...</option>
-                    {formStreets.map((s) => (
+                    {streets.map((s) => (
                       <option key={s.streetId} value={s.streetId}>
                         {s.streetName}
                       </option>

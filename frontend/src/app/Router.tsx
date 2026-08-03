@@ -2,10 +2,9 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { AppShell } from '@/shared/components/layout/AppShell'
+import { PERM, type Permission } from '@/shared/lib/permissions'
 
 // ─── Lazy-loaded feature pages ────────────────────────────────────────────────
-// Using React.lazy ensures each feature is a separate code-split chunk.
-// Add new feature pages here as they are implemented.
 
 const LoginPage          = React.lazy(() => import('@/features/auth/pages/LoginPage'))
 const DashboardPage      = React.lazy(() => import('@/features/dashboard/pages/DashboardPage'))
@@ -13,7 +12,7 @@ const ResidentsPage      = React.lazy(() => import('@/features/residents/pages/R
 const ResidentDetailPage = React.lazy(() => import('@/features/residents/pages/ResidentDetailPage'))
 const HouseholdsPage     = React.lazy(() => import('@/features/households/pages/HouseholdsPage'))
 const EventsPage         = React.lazy(() => import('@/components/EventsView'))
-const BarangaysPage      = React.lazy(() => import('@/features/barangays/pages/BarangaysPage'))
+const StreetsPage        = React.lazy(() => import('@/features/barangays/pages/BarangaysPage'))
 const CertificatesPage   = React.lazy(() => import('@/features/certificates/pages/CertificatesPage'))
 const ReportsPage        = React.lazy(() => import('@/features/reports/pages/ReportsPage'))
 const UsersPage          = React.lazy(() => import('@/features/users/pages/UsersPage'))
@@ -22,19 +21,37 @@ const SettingsPage       = React.lazy(() => import('@/features/settings/pages/Se
 
 // ─── Route Guards ─────────────────────────────────────────────────────────────
 
+/** Redirect unauthenticated users to /login */
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
   if (!currentUser) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
-function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { currentUser, isAdmin } = useAuth()
+/** Only allow users with a specific permission; others go to /dashboard */
+function RequirePermission({
+  permission,
+  children,
+}: {
+  permission: Permission
+  children: React.ReactNode
+}) {
+  const { currentUser, hasPermission } = useAuth()
   if (!currentUser) return <Navigate to="/login" replace />
-  if (!isAdmin) return <Navigate to="/dashboard" replace />
+  if (!hasPermission(permission)) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
+/** Keep legacy RequireAdmin name — full access roles only (Captain + Secretary) */
+function RequireAdmin({ children }: { children: React.ReactNode }) {
+  return (
+    <RequirePermission permission={PERM.VIEW_USERS}>
+      {children}
+    </RequirePermission>
+  )
+}
+
+/** Redirect already-authenticated users away from login */
 function GuestOnly({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
   if (currentUser) return <Navigate to="/dashboard" replace />
@@ -47,8 +64,8 @@ export function AppRouter() {
   return (
     <React.Suspense
       fallback={
-        <div className="min-h-screen bg-[#F2F4F1] flex items-center justify-center">
-          <span className="text-sm text-slate-400 font-mono animate-pulse">Loading…</span>
+        <div className="min-h-screen bg-[#FCE4EC] flex items-center justify-center">
+          <span className="text-sm text-[#E8198A] font-mono animate-pulse">Loading…</span>
         </div>
       }
     >
@@ -72,17 +89,91 @@ export function AppRouter() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard"    element={<DashboardPage />} />
-          <Route path="/residents"    element={<ResidentsPage />} />
-          <Route path="/residents/:id" element={<ResidentDetailPage />} />
-          <Route path="/households"   element={<HouseholdsPage />} />
-          <Route path="/events"       element={<EventsPage />} />
-          <Route path="/barangays"    element={<BarangaysPage />} />
-          <Route path="/certificates" element={<CertificatesPage />} />
-          <Route path="/reports"      element={<ReportsPage />} />
-          <Route path="/settings"     element={<SettingsPage />} />
 
-          {/* Admin-only */}
+          {/* All roles */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* Residents — all roles can view; Tanod gets read-only via canEdit */}
+          <Route
+            path="/residents"
+            element={
+              <RequirePermission permission={PERM.VIEW_RESIDENTS}>
+                <ResidentsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/residents/:id"
+            element={
+              <RequirePermission permission={PERM.VIEW_RESIDENTS}>
+                <ResidentDetailPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Households — Captain, Secretary, Kagawad only */}
+          <Route
+            path="/households"
+            element={
+              <RequirePermission permission={PERM.VIEW_HOUSEHOLDS}>
+                <HouseholdsPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Events — all roles can view */}
+          <Route
+            path="/events"
+            element={
+              <RequirePermission permission={PERM.VIEW_EVENTS}>
+                <EventsPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Streets — Captain, Secretary, Kagawad */}
+          <Route
+            path="/streets"
+            element={
+              <RequirePermission permission={PERM.VIEW_BARANGAYS}>
+                <StreetsPage />
+              </RequirePermission>
+            }
+          />
+          {/* Redirect old /barangays links to /streets */}
+          <Route path="/barangays" element={<Navigate to="/streets" replace />} />
+
+          {/* Certificates — Captain, Secretary, Kagawad */}
+          <Route
+            path="/certificates"
+            element={
+              <RequirePermission permission={PERM.VIEW_CERTIFICATES}>
+                <CertificatesPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Reports — Captain, Secretary, Kagawad */}
+          <Route
+            path="/reports"
+            element={
+              <RequirePermission permission={PERM.VIEW_REPORTS}>
+                <ReportsPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Settings — Captain, Secretary only */}
+          <Route
+            path="/settings"
+            element={
+              <RequirePermission permission={PERM.VIEW_SETTINGS}>
+                <SettingsPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Admin-only — Captain + Secretary */}
           <Route
             path="/users"
             element={
