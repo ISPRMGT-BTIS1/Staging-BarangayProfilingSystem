@@ -37,7 +37,7 @@ export async function logCertificateRequest({
   controlNumber = null,
 }) {
   try {
-    const { error } = await supabase.from('certificate_requests').insert([{
+    const { data: certData, error } = await supabase.from('certificate_requests').insert([{
       certificate_type: certificateType,
       resident_name: residentName,
       resident_id: residentId,
@@ -46,10 +46,25 @@ export async function logCertificateRequest({
       or_number: orNumber,
       control_number: controlNumber,
       status: 'ISSUED',
-    }]);
+    }]).select().single();
 
     if (error) {
       console.warn('[logCertificateRequest] Failed to save record:', error.message);
+      return;
+    }
+
+    if (certData && certData.id) {
+      // Also log to audit_log
+      const { error: auditError } = await supabase.from('audit_log').insert([{
+        table_name: 'certificate_requests',
+        record_id: String(certData.id),
+        action_type: 'CREATE',
+        performed_by: issuedBy,
+      }]);
+
+      if (auditError) {
+        console.warn('[logCertificateRequest] Failed to save audit log:', auditError.message);
+      }
     }
   } catch (err) {
     console.warn('[logCertificateRequest] Unexpected error:', err);

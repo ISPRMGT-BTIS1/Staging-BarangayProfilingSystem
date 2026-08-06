@@ -128,10 +128,10 @@ function RoleBadge({ roleId }: { roleId: number | undefined }) {
 
   const colorClasses =
     meta.color === 'pink'
-      ? 'bg-white/20 text-white border-white/30'
+      ? 'bg-[#F4B5C7]/30 text-[#D86B98] border-[#F4B5C7]'
       : meta.color === 'teal'
-      ? 'bg-teal-500/20 text-teal-100 border-teal-300/30'
-      : 'bg-white/10 text-white/60 border-white/20'
+      ? 'bg-teal-50 text-teal-700 border-teal-200'
+      : 'bg-slate-50 text-slate-600 border-slate-200'
 
   return (
     <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border font-mono ${colorClasses}`}>
@@ -201,7 +201,7 @@ export function Sidebar() {
 
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center space-x-2 px-3 py-2.5 text-sm font-semibold uppercase tracking-wider text-white hover:text-red-200 hover:bg-red-900/30 border border-white/20 rounded-xl cursor-pointer transition-all"
+          className="w-full flex items-center justify-center space-x-2 px-3 py-2.5 text-sm font-semibold uppercase tracking-wider text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-xl cursor-pointer transition-all"
         >
           <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

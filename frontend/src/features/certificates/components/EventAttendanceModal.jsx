@@ -148,7 +148,20 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    try {
+      if (createdEvent) {
+        await logAudit(
+          "events",
+          createdEvent.id,
+          "PRINT",
+          currentUser?.userId || null,
+          `Printed event attendance sheet: ${createdEvent.title}`
+        );
+      }
+    } catch (err) {
+      console.warn("Failed to log print action:", err);
+    }
     window.print();
   };
 

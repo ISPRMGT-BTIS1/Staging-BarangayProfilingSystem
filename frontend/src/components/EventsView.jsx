@@ -639,6 +639,7 @@ export default function EventsView() {
           event={selectedEventForPrint}
           residents={residents}
           getFullAddress={getFullAddress}
+          currentUser={currentUser}
           onClose={() => {
             setShowPrintModal(false);
             setSelectedEventForPrint(null);
@@ -650,10 +651,21 @@ export default function EventsView() {
 }
 
 // ─── PRINT ATTENDANCE SHEET MODAL COMPONENT ─────────────────────────────────
-function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
+function PrintAttendanceModal({ event, residents, getFullAddress, currentUser, onClose }) {
   const printRef = useRef(null);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    try {
+      await logAudit(
+        "events",
+        event.id,
+        "PRINT",
+        currentUser?.userId || null,
+        `Printed event attendance sheet: ${event.title}`
+      );
+    } catch (err) {
+      console.warn("Failed to log print action:", err);
+    }
     window.print();
   };
 
