@@ -17,9 +17,16 @@ export function TopBar() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value
     if (q.trim()) {
-      navigate(`/residents?q=${encodeURIComponent(q)}`)
+      // If the search looks like a certificate control number (e.g. B46-2026...), route to certificates
+      if (/^b46-/i.test(q.trim())) {
+        navigate(`/certificates?q=${encodeURIComponent(q)}`)
+      } else {
+        navigate(`/residents?q=${encodeURIComponent(q)}`)
+      }
     } else if (location.pathname.startsWith('/residents')) {
       navigate('/residents')
+    } else if (location.pathname.startsWith('/certificates')) {
+      navigate('/certificates')
     }
   }
 
@@ -52,7 +59,7 @@ export function TopBar() {
         <input
           type="text"
           defaultValue={currentQuery}
-          placeholder="Search resident name, address, or ID..."
+          placeholder="Search resident name, address, or cert (B46-...)"
           className="w-full pl-9 pr-4 py-2 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D86B98] text-[#322A2C] font-sans placeholder-[#322A2C]/40 transition-colors shadow-sm"
           onChange={handleSearch}
         />

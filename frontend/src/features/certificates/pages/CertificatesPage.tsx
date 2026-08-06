@@ -46,7 +46,15 @@ export default function CertificatesPage() {
   const [userMap, setUserMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState('ALL')
-  const [search, setSearch] = useState('')
+  const searchParams = new URLSearchParams(window.location.search)
+  const initialSearch = searchParams.get('q') || ''
+  const [search, setSearch] = useState(initialSearch)
+
+  // Sync search state if URL changes (e.g. from TopBar)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q') || ''
+    setSearch(q)
+  }, [window.location.search])
 
   const fetchRecords = async () => {
     setLoading(true)
@@ -99,7 +107,7 @@ export default function CertificatesPage() {
 
   const filtered = records.filter(r => {
     const matchType = filterType === 'ALL' || r.certificate_type === filterType
-    const q = search.toLowerCase()
+    const q = search.toLowerCase().trim()
     const issuedByText = formatIssuedBy(r.issued_by) || ''
     const matchSearch = !q
       || String(r.resident_name || '').toLowerCase().includes(q)
