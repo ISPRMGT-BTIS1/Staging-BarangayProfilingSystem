@@ -94,6 +94,8 @@ export default function ResidentsView({
     emergencyContactNumber: "",
     selectedStatuses: [],
     otherStatusNotes: "",
+    photoBase64: "",
+    validIdBase64: "",
     isEditing: false,
     editResidentId: null
   });
@@ -104,7 +106,7 @@ export default function ResidentsView({
 
   // Collapsible form sections
   const [expandedSections, setExpandedSections] = useState({
-    personal: true, address: true, work: true, statuses: true, registry: true
+    personal: true, address: true, work: true, statuses: true, registry: true, media: true
   });
 
   const toggleSection = (section) => {
@@ -267,6 +269,8 @@ export default function ResidentsView({
       emergency_contact_name: formData.emergencyContactName || null,
       emergency_contact_relationship: formData.emergencyContactRelationship || null,
       emergency_contact_number: formData.emergencyContactNumber || null,
+      photo_url: formData.photoBase64 || null,
+      valid_id_url: formData.validIdBase64 || null
     };
 
     try {
@@ -339,6 +343,8 @@ export default function ResidentsView({
         emergencyContactNumber: "",
         selectedStatuses: [],
         otherStatusNotes: "",
+        photoBase64: "",
+        validIdBase64: "",
         isEditing: false,
         editResidentId: null
       });
@@ -400,6 +406,8 @@ export default function ResidentsView({
       emergencyContactName: resident.emergencyContactName || "",
       emergencyContactRelationship: resident.emergencyContactRelationship || "",
       emergencyContactNumber: resident.emergencyContactNumber || "",
+      photoBase64: resident.photo_url || "",
+      validIdBase64: resident.valid_id_url || "",
       selectedStatuses: activeStatuses,
       otherStatusNotes: otherStatus ? (otherStatus.notes || "") : "",
       isEditing: true,
@@ -571,7 +579,7 @@ export default function ResidentsView({
             className="border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-2xs transition-all inline-flex items-center space-x-1.5 bg-white"
             title="Download a sample CSV file format"
           >
-            <span>📥</span>
+            <span></span>
             <span>Download Template</span>
           </button>
           <input 
@@ -585,7 +593,7 @@ export default function ResidentsView({
             onClick={() => fileInputRef.current.click()}
             className="border border-[#D86B98] text-[#D86B98] hover:bg-[#D86B98] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 bg-white"
           >
-            <span>📄</span>
+            <span></span>
             <span>Import CSV</span>
           </button>
           {canEdit && (
@@ -609,7 +617,7 @@ export default function ResidentsView({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+              className="bg-[#FFF8F8] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] font-semibold cursor-pointer"
             >
               <option value="all">ALL STATUSES</option>
               <option value="Active">ACTIVE</option>
@@ -625,7 +633,7 @@ export default function ResidentsView({
             <select
               value={barangayFilter}
               onChange={(e) => setBarangayFilter(e.target.value)}
-              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+              className="bg-[#FFF8F8] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] font-semibold cursor-pointer"
             >
               <option value="all">ALL SECTORS</option>
               <option value="Brgy. 46 Zone 6">BRGY. 46 ZONE 6</option>
@@ -638,7 +646,7 @@ export default function ResidentsView({
             <select
               value={residentStatusFilter}
               onChange={(e) => setResidentStatusFilter(e.target.value)}
-              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+              className="bg-[#FFF8F8] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] font-semibold cursor-pointer"
             >
               <option value="all">ALL CATEGORIES</option>
               {STATUS_TYPES.map(st => (
@@ -649,7 +657,7 @@ export default function ResidentsView({
         </div>
 
         <div className="text-xs font-mono font-semibold text-slate-500">
-          Showing <span className="text-[#16324A] font-bold">{sortedResidents.length}</span> of {residentsList.length} total records
+          Showing <span className="text-[#322A2C] font-bold">{sortedResidents.length}</span> of {residentsList.length} total records
         </div>
       </section>
 
@@ -695,7 +703,7 @@ export default function ResidentsView({
                       
                       {/* Name — Last, First format */}
                       <td>
-                        <div className="font-bold text-[#16324A] text-sm">{getResidentShortName(resident)}</div>
+                        <div className="font-bold text-[#322A2C] text-sm">{getResidentShortName(resident)}</div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">DOB: {resident.birthDate} &bull; {resident.civilStatus}</div>
                       </td>
 
@@ -711,11 +719,11 @@ export default function ResidentsView({
                           onClick={() => handleHouseholdLink(resident.householdId)}
                           className="text-left group cursor-pointer"
                         >
-                          <div className="text-xs font-bold text-[#16324A] group-hover:underline flex items-center space-x-1">
-                            <span>🏠</span>
+                          <div className="text-xs font-bold text-[#322A2C] group-hover:underline flex items-center space-x-1">
+                            <span></span>
                             <span>{addressStr}</span>
                           </div>
-                          <div className="text-[10px] text-slate-400 group-hover:text-[#16324A] font-mono mt-0.5 uppercase tracking-wide">
+                          <div className="text-[10px] text-slate-400 group-hover:text-[#322A2C] font-mono mt-0.5 uppercase tracking-wide">
                             {barangayName} &bull; {resident.householdId}
                           </div>
                         </button>
@@ -726,7 +734,7 @@ export default function ResidentsView({
                         <div className="flex flex-wrap gap-1">
                           {statusChips.length > 0 ? (
                             statusChips.map(sc => (
-                              <span key={sc.residentStatusId} className="inline-block text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm bg-[#16324A]/5 text-[#16324A] border border-[#16324A]/15">
+                              <span key={sc.residentStatusId} className="inline-block text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm bg-[#322A2C]/5 text-[#322A2C] border border-[#322A2C]/15">
                                 {sc.statusType === "Senior Citizen" ? "Senior" : sc.statusType}
                               </span>
                             ))
@@ -768,7 +776,7 @@ export default function ResidentsView({
                         </button>
                         <button
                           onClick={() => onViewResident(resident.residentId)}
-                          className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                          className="border border-[#322A2C] text-[#322A2C] hover:bg-[#322A2C] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                         >
                           Verify Profile
                         </button>
@@ -790,13 +798,13 @@ export default function ResidentsView({
 
       {/* Profiling Form Modal — Full-page with collapsible sections */}
       {showNewProfilingModal && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>📋</span>
+                <span></span>
                 <span>{formData.isEditing ? "Edit Profiling Record" : "Resident Registry Profiling Form"}</span>
               </h3>
               <button
@@ -937,7 +945,7 @@ export default function ResidentsView({
                           <input type="checkbox" name="isDependent" checked={!formData.isDependent}
                             onChange={(e) => setFormData(prev => ({ ...prev, isDependent: !e.target.checked }))}
                             className="accent-[#E8198A]" />
-                          <span className="text-xs font-semibold text-[#16324A]">This person is the Family Head</span>
+                          <span className="text-xs font-semibold text-[#322A2C]">This person is the Family Head</span>
                         </label>
                       </div>
                       <div className="col-span-2 flex flex-col relative z-[60]">
@@ -1069,11 +1077,97 @@ export default function ResidentsView({
                   )}
                 </div>
 
-                {/* Section E — Registry Status */}
+                {/* Section E — Resident Photos / Identifications */}
+                <div className="border border-[#F8BBD0] rounded-xs relative">
+                  <button type="button" onClick={() => toggleSection("media")}
+                    className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
+                    <span>Section E — Resident Photo & Valid ID</span>
+                    <span>{expandedSections.media ? "▲" : "▼"}</span>
+                  </button>
+                  {expandedSections.media && (
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white rounded-b-xs">
+                      {/* 1x1 Photo */}
+                      <div className="flex flex-col border border-[#D1D7CE] rounded p-4 bg-[#FFF8F8]">
+                        <label className={`${labelClass} mb-3`}>1x1 Resident Photo</label>
+                        <div className="flex items-start gap-4">
+                          <div className="w-24 h-24 rounded border-2 border-dashed border-[#D1D7CE] flex items-center justify-center bg-white overflow-hidden flex-shrink-0">
+                            {formData.photoBase64 ? (
+                              <img src={formData.photoBase64} alt="Resident" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-4xl text-slate-300"></span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input 
+                              type="file" 
+                              accept="image/*"
+                              onChange={async (e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  try {
+                                    const { fileToBase64 } = await import('../utils/helpers');
+                                    const base64 = await fileToBase64(e.target.files[0]);
+                                    setFormData(prev => ({ ...prev, photoBase64: base64 }));
+                                  } catch (err) {
+                                    alert("Failed to process photo.");
+                                  }
+                                }
+                              }}
+                              className="text-xs w-full text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#E8198A]/10 file:text-[#E8198A] hover:file:bg-[#E8198A]/20 cursor-pointer"
+                            />
+                            <p className="text-[10px] text-slate-500 mt-2 leading-tight">Upload a clear 1x1 photo with white background. Max size: 2MB.</p>
+                            {formData.photoBase64 && (
+                              <button type="button" onClick={() => setFormData(prev => ({ ...prev, photoBase64: "" }))} className="mt-2 text-[10px] font-bold text-red-500 hover:underline">
+                                Remove Photo
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Valid ID */}
+                      <div className="flex flex-col border border-[#D1D7CE] rounded p-4 bg-[#FFF8F8]">
+                        <label className={`${labelClass} mb-3`}>Scanned Valid ID</label>
+                        <div className="flex flex-col gap-3">
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={async (e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                try {
+                                  const { fileToBase64 } = await import('../utils/helpers');
+                                  const base64 = await fileToBase64(e.target.files[0]);
+                                  setFormData(prev => ({ ...prev, validIdBase64: base64 }));
+                                } catch (err) {
+                                  alert("Failed to process ID.");
+                                }
+                              }
+                            }}
+                            className="text-xs w-full text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#322A2C]/10 file:text-[#322A2C] hover:file:bg-[#322A2C]/20 cursor-pointer"
+                          />
+                          {formData.validIdBase64 ? (
+                            <div className="relative w-full h-24 rounded border border-[#D1D7CE] bg-white overflow-hidden">
+                              <img src={formData.validIdBase64} alt="Valid ID" className="w-full h-full object-contain" />
+                              <button type="button" onClick={() => setFormData(prev => ({ ...prev, validIdBase64: "" }))} className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm text-red-500 hover:bg-red-50">
+                                
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-full h-24 rounded border-2 border-dashed border-[#D1D7CE] flex items-center justify-center bg-white text-xs text-slate-400 italic">
+                              No ID uploaded
+                            </div>
+                          )}
+                          <p className="text-[10px] text-slate-500 leading-tight">Upload a scanned copy of a valid government-issued ID.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section F — Registry Status */}
                 <div className="border border-[#F8BBD0] rounded-xs relative">
                   <button type="button" onClick={() => toggleSection("registry")}
                     className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
-                    <span>Section E — Registry Status</span>
+                    <span>Section F — Registry Status</span>
                     <span>{expandedSections.registry ? "▲" : "▼"}</span>
                   </button>
                   {expandedSections.registry && (
@@ -1089,7 +1183,7 @@ export default function ResidentsView({
                       </div>
                       {formData.residencyStatus === "Deceased" && (
                         <div className="mt-3 bg-[#9B3D30]/10 border border-[#9B3D30]/30 text-[#9B3D30] text-xs font-semibold px-4 py-2.5 rounded-xs flex items-center space-x-2">
-                          <span>⚠️</span>
+                          <span></span>
                           <span>This action requires supervisor confirmation.</span>
                         </div>
                       )}
@@ -1121,18 +1215,18 @@ export default function ResidentsView({
 
       {/* Quick Archive / Status Change Modal */}
       {showArchiveModal && archiveResident && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#C8932B] w-full max-w-sm rounded-xs overflow-hidden shadow-xl">
             <div className="bg-[#C8932B] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-base flex items-center space-x-2">
-                <span>📁</span>
+                <span></span>
                 <span>Change Residency Status</span>
               </h3>
               <button onClick={() => setShowArchiveModal(false)} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
             </div>
             <form onSubmit={handleArchive} className="p-6 space-y-4 font-sans">
-              <div className="bg-[#F9FAF8] border border-[#D1D7CE] rounded-xs p-3 text-xs">
-                <p className="font-mono font-bold text-[#16324A]">{archiveResident.lastName}, {archiveResident.firstName}</p>
+              <div className="bg-[#FFF8F8] border border-[#D1D7CE] rounded-xs p-3 text-xs">
+                <p className="font-mono font-bold text-[#322A2C]">{archiveResident.lastName}, {archiveResident.firstName}</p>
                 <p className="text-slate-400 mt-0.5 font-mono">{archiveResident.residentId}</p>
               </div>
               <div className="flex flex-col">
@@ -1150,7 +1244,7 @@ export default function ResidentsView({
               </div>
               {archiveStatus === "Deceased" && (
                 <div className="bg-[#9B3D30]/10 border border-[#9B3D30]/30 text-[#9B3D30] text-xs font-semibold px-4 py-2.5 rounded-xs flex items-center space-x-2">
-                  <span>⚠️</span>
+                  <span></span>
                   <span>This action requires supervisor confirmation.</span>
                 </div>
               )}

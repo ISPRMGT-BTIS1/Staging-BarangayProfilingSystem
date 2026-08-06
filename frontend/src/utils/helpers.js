@@ -21,6 +21,23 @@ export function formatAgeAndSex(dob, sex) {
   return `${age} yrs / ${sex || "N/A"}`;
 }
 
+export function capitalizeWords(str) {
+  if (!str) return "";
+  return str.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
+
+/**
+ * Convert a File object to a Base64 encoded string.
+ */
+export function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
 export function formatDOB(dob) {
   if (!dob) return "N/A";
   return new Date(dob).toLocaleDateString();

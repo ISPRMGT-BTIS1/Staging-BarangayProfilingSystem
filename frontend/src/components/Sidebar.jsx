@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { id: "households",   label: "Households",   permission: PERM.VIEW_HOUSEHOLDS },
   { id: "events",       label: "Events",       permission: PERM.VIEW_EVENTS },
   { id: "certificates", label: "Certificates", permission: PERM.VIEW_CERTIFICATES },
+  { id: "incidents",    label: "Incidents",    permission: PERM.VIEW_INCIDENTS },
   { id: "reports",      label: "Reports",      permission: PERM.VIEW_REPORTS },
   { id: "streets",      label: "Streets",      permission: PERM.VIEW_SETTINGS },
   { id: "users",        label: "Users",        permission: PERM.VIEW_USERS },
@@ -48,6 +49,13 @@ const getIcon = (id, isActive) => {
         <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
         <rect x="9" y="3" width="6" height="4" rx="2" />
         <path d="M9 12h6" /><path d="M9 16h4" />
+      </svg>
+    );
+    case "incidents": return (
+      <svg className={cls} viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="M12 8v4" />
+        <path d="M12 16h.01" />
       </svg>
     );
     case "reports": return (

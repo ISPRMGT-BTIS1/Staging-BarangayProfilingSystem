@@ -9,6 +9,7 @@ import CertificationOfGuardianshipModal from './CertificationOfGuardianshipModal
 import CertificationOfIndigencyModal from './CertificationOfIndigencyModal'
 import OathOfUndertakingModal from './OathOfUndertakingModal'
 import EventAttendanceModal from './EventAttendanceModal'
+import CertificationOfOnenessModal from './CertificationOfOnenessModal'
 
 interface CertificateCardProps {
   type: CertificateType
@@ -97,6 +98,10 @@ export function CertificateList() {
             isOpen={activeModal === CertificateType.EVENT_ATTENDANCE_SHEET}
             onClose={handleClose}
           />
+          <CertificationOfOnenessModal
+            isOpen={activeModal === CertificateType.CERTIFICATION_OF_ONENESS}
+            onClose={handleClose}
+          />
 
           {/* Other types: show a "coming soon" toast for now */}
           {activeModal !== null &&
@@ -107,14 +112,15 @@ export function CertificateList() {
             activeModal !== CertificateType.CERTIFICATION_OF_GUARDIANSHIP &&
             activeModal !== CertificateType.CERTIFICATION_OF_INDIGENCY &&
             activeModal !== CertificateType.OATH_OF_UNDERTAKING &&
-            activeModal !== CertificateType.EVENT_ATTENDANCE_SHEET && (
+            activeModal !== CertificateType.EVENT_ATTENDANCE_SHEET &&
+            activeModal !== CertificateType.CERTIFICATION_OF_ONENESS && (
               <div className="fixed bottom-6 right-6 z-50 ledger-container px-5 py-3 flex items-center gap-3 shadow-lg animate-in slide-in-from-bottom-2">
                 <svg className="h-4 w-4 text-[#C8932B] fill-none stroke-current flex-shrink-0" viewBox="0 0 24 24" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 8v4m0 4h.01" />
                 </svg>
                 <div>
-                  <p className="text-xs font-semibold text-[#16324A]">
+                  <p className="text-xs font-semibold text-[#322A2C]">
                     {CERTIFICATE_TYPE_LABELS[activeModal]}
                   </p>
                   <p className="text-[10px] text-slate-500 mt-0.5">
@@ -123,7 +129,7 @@ export function CertificateList() {
                 </div>
                 <button
                   onClick={handleClose}
-                  className="ml-2 text-slate-400 hover:text-[#16324A] cursor-pointer"
+                  className="ml-2 text-slate-400 hover:text-[#322A2C] cursor-pointer"
                 >
                   ×
                 </button>

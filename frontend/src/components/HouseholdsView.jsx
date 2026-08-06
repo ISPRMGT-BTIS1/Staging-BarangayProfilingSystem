@@ -231,7 +231,7 @@ export default function HouseholdsView({
     }
   };
 
-  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
+  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
   const selectClass = `${inputClass} cursor-pointer`;
   const labelClass = "text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1";
 
@@ -416,7 +416,7 @@ export default function HouseholdsView({
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+              className="bg-[#FFF8F8] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] font-semibold cursor-pointer"
             >
               <option value="all">ALL TYPES</option>
               <option value="House">HOUSE</option>
@@ -429,7 +429,7 @@ export default function HouseholdsView({
         </div>
 
         <div className="text-xs font-mono font-semibold text-slate-500">
-          Showing <span className="text-[#16324A] font-bold">{filteredHouseholds.length}</span> of {householdsList.length} household sectors
+          Showing <span className="text-[#322A2C] font-bold">{filteredHouseholds.length}</span> of {householdsList.length} household sectors
         </div>
       </section>
 
@@ -458,21 +458,21 @@ export default function HouseholdsView({
               <div
                 key={household.householdId}
                 className={`ledger-container transition-all border ${
-                  isExpanded ? "border-[#16324A] ring-1 ring-[#16324A]/25" : "border-[#D1D7CE]"
+                  isExpanded ? "border-[#322A2C] ring-1 ring-[#322A2C]/25" : "border-[#D1D7CE]"
                 }`}
               >
                 {/* Header Summary Row */}
                 <div
                   onClick={() => toggleExpand(household.householdId)}
-                  className="p-4 bg-white flex flex-wrap items-center justify-between gap-4 cursor-pointer hover:bg-[#F9FAF8] transition-colors"
+                  className="p-4 bg-white flex flex-wrap items-center justify-between gap-4 cursor-pointer hover:bg-[#FFF8F8] transition-colors"
                 >
                   <div className="flex items-center space-x-4">
-                    <span className="font-mono text-xs font-bold text-slate-400 bg-[#F2F4F1] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
+                    <span className="font-mono text-xs font-bold text-slate-400 bg-[#FFF8F8] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
                       {household.householdId}
                     </span>
                     <div>
-                      <h3 className="font-bold text-sm text-[#16324A] font-serif flex items-center space-x-1">
-                        <span>🏡</span>
+                      <h3 className="font-bold text-sm text-[#322A2C] font-serif flex items-center space-x-1">
+                        <span></span>
                         <span>{addressStr}</span>
                       </h3>
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-0.5">
@@ -502,7 +502,7 @@ export default function HouseholdsView({
                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={(e) => openEditHH(e, household)}
-                        className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                        className="border border-[#322A2C] text-[#322A2C] hover:bg-[#322A2C] hover:text-white text-[10px] px-2 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                       >
                         Edit
                       </button>
@@ -522,17 +522,17 @@ export default function HouseholdsView({
 
                 {/* Expanded Details Section */}
                 {isExpanded && (
-                  <div className="bg-[#F9FAF8] border-t border-[#D1D7CE] p-5 space-y-6">
+                  <div className="bg-[#FFF8F8] border-t border-[#D1D7CE] p-5 space-y-6">
                     {/* Head Details if exists */}
                     {headResident && (
                       <div className="bg-white border border-[#D1D7CE] p-3 rounded-xs flex items-center justify-between text-xs max-w-md">
                         <div>
                           <p className="text-[10px] text-slate-400 font-mono uppercase">Household Head</p>
-                          <p className="font-bold text-sm text-[#16324A]">
+                          <p className="font-bold text-sm text-[#322A2C]">
                             {getResidentShortName(headResident)}
                           </p>
                         </div>
-                        <span className="font-mono bg-[#F2F4F1] border border-[#D1D7CE] px-2 py-0.5 rounded">
+                        <span className="font-mono bg-[#FFF8F8] border border-[#D1D7CE] px-2 py-0.5 rounded">
                           {headResident.residentId}
                         </span>
                       </div>
@@ -542,7 +542,7 @@ export default function HouseholdsView({
                     <div>
                       <div className="flex items-center justify-between mb-3 border-b border-[#D1D7CE]/50 pb-1">
                         <h4 className="text-xs uppercase font-mono tracking-wider text-slate-500 font-bold flex items-center space-x-2">
-                          <span>👨‍👩‍👧‍👦</span>
+                          <span></span>
                           <span>Families Unit List ({linkedFamilies.length})</span>
                         </h4>
                         <button
@@ -551,7 +551,7 @@ export default function HouseholdsView({
                             setAddFamilyHouseholdId(household.householdId);
                             setShowAddFamilyModal(true);
                           }}
-                          className="text-[10px] bg-[#16324A] text-white px-2.5 py-1 rounded-xs font-semibold uppercase tracking-wider hover:bg-[#1f4260] cursor-pointer transition-colors"
+                          className="text-[10px] bg-[#322A2C] text-white px-2.5 py-1 rounded-xs font-semibold uppercase tracking-wider hover:bg-[#1f4260] cursor-pointer transition-colors"
                         >
                           + Add Family
                         </button>
@@ -580,7 +580,7 @@ export default function HouseholdsView({
                                 className="bg-white border border-[#D1D7CE] p-3.5 rounded-xs shadow-2xs"
                               >
                                 <div className="flex justify-between items-baseline mb-2">
-                                  <span className="font-mono text-[10px] font-bold text-slate-500 bg-[#F2F4F1] border border-[#D1D7CE] px-1.5 py-0.25 rounded">
+                                  <span className="font-mono text-[10px] font-bold text-slate-500 bg-[#FFF8F8] border border-[#D1D7CE] px-1.5 py-0.25 rounded">
                                     {family.familyId}
                                   </span>
                                   {/* Update family status chips with Transferred option */}
@@ -597,7 +597,7 @@ export default function HouseholdsView({
                                   </span>
                                 </div>
                                 <p className="text-xs text-slate-500">Family Head</p>
-                                <p className="font-bold text-sm text-[#16324A]">
+                                <p className="font-bold text-sm text-[#322A2C]">
                                   {familyHeadRelation
                                     ? getResidentShortName(familyHeadRelation)
                                     : "No Active Head Linked"}
@@ -608,13 +608,13 @@ export default function HouseholdsView({
                                   </span>
                                   <div className="flex items-center gap-1.5">
                                     {familyHeadRelation && (
-                                      <span className="font-mono text-[10px] bg-[#F2F4F1] border px-1 border-[#D1D7CE] rounded">
+                                      <span className="font-mono text-[10px] bg-[#FFF8F8] border px-1 border-[#D1D7CE] rounded">
                                         {familyHeadRelation.residentId}
                                       </span>
                                     )}
                                     <button
                                       onClick={(e) => openEditFamily(e, family)}
-                                      className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[9px] px-1.5 py-0.5 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                                      className="border border-[#322A2C] text-[#322A2C] hover:bg-[#322A2C] hover:text-white text-[9px] px-1.5 py-0.5 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                                     >
                                       Edit
                                     </button>
@@ -640,14 +640,14 @@ export default function HouseholdsView({
                     {/* Grouped Co-habitants list */}
                     <div>
                       <h4 className="text-xs uppercase font-mono tracking-wider text-slate-500 font-bold mb-3 border-b border-[#D1D7CE]/50 pb-1 flex items-center space-x-2">
-                        <span>👥</span>
+                        <span></span>
                         <span>Resident Co-habitants Details ({residentMembers.length})</span>
                       </h4>
 
                       <div className="bg-white border border-[#D1D7CE] rounded-xs overflow-hidden">
                         <table className="ledger-table">
                           <thead>
-                            <tr className="bg-[#F2F4F1]/60">
+                            <tr className="bg-[#FFF8F8]/60">
                               <th className="py-2 px-3 text-xs font-mono">Resident ID</th>
                               <th className="py-2 px-3 text-xs font-serif">Full Name</th>
                               <th className="py-2 px-3 text-xs">Age/Sex</th>
@@ -667,7 +667,7 @@ export default function HouseholdsView({
                                       {member.residentId}
                                     </td>
                                     <td className="py-2.5 px-3">
-                                      <div className="font-bold text-[#16324A] text-xs">
+                                      <div className="font-bold text-[#322A2C] text-xs">
                                         {getResidentShortName(member)}
                                       </div>
                                       <div className="text-[9px] text-slate-400 font-mono mt-0.5">
@@ -724,12 +724,12 @@ export default function HouseholdsView({
 
       {/* New Household Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-lg rounded-xs shadow-xl flex flex-col relative z-50">
             {/* Modal Header */}
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>📋</span>
+                <span></span>
                 <span>New Household Registration</span>
               </h3>
               <button
@@ -850,11 +850,11 @@ export default function HouseholdsView({
 
       {/* Add Family Modal */}
       {showAddFamilyModal && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs shadow-xl flex flex-col relative z-50">
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center rounded-t-xs">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>👨‍👩‍👧‍👦</span>
+                <span></span>
                 <span>Add New Family Unit</span>
               </h3>
               <button
@@ -920,11 +920,11 @@ export default function HouseholdsView({
 
       {/* Edit Household Modal */}
       {showEditHHModal && editHH && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs shadow-xl flex flex-col relative z-50">
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center rounded-t-xs">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>🏡</span>
+                <span></span>
                 <span>Edit Household {editHH.householdId}</span>
               </h3>
               <button onClick={() => setShowEditHHModal(false)} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
@@ -981,11 +981,11 @@ export default function HouseholdsView({
 
       {/* Edit Family Modal */}
       {showEditFamilyModal && editFamily && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs shadow-xl flex flex-col relative z-50">
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center rounded-t-xs">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>✏️</span>
+                <span></span>
                 <span>Edit Family {editFamily.familyId}</span>
               </h3>
               <button onClick={() => setShowEditFamilyModal(false)} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">&times;</button>

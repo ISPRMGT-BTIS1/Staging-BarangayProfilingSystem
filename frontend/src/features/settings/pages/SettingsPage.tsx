@@ -1,10 +1,11 @@
-import { auditLog, barangays } from '@/mocks'
+import { useData } from '../../../context/DataContext'
 
 export default function SettingsPage() {
+  const { barangays, auditLog } = useData()
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-serif text-[#16324A]">Settings &amp; Administration</h1>
+        <h1 className="text-3xl font-bold font-serif text-[#322A2C]">Settings &amp; Administration</h1>
         <p className="text-sm text-slate-500 font-sans">
           Configure local parameters, staff permissions, and registry stamp templates
         </p>
@@ -13,15 +14,15 @@ export default function SettingsPage() {
       <div className="ledger-container p-5 space-y-6">
         {/* Section 1: Barangay Details */}
         <div>
-          <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-3">
+          <h3 className="text-sm font-serif font-bold text-[#322A2C] border-b border-[#D1D7CE] pb-2 mb-3">
             Barangay Profiles Config
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {(barangays as Array<Record<string, unknown>>).map((brgy) => (
-              <div key={brgy.id as string} className="bg-[#F9FAF8] border border-[#D1D7CE] p-3 rounded-xs">
-                <p className="font-bold text-[#16324A]">{brgy.name as string}</p>
-                <p className="text-slate-500 mt-1">Sector Code: {brgy.code as string ?? `BRGY-${brgy.id}`}</p>
-                <p className="text-slate-500">Official Seal Symbol: 🏛️</p>
+              <div key={brgy.barangayId as string} className="bg-[#FFF8F8] border border-[#D1D7CE] p-3 rounded-xs">
+                <p className="font-bold text-[#322A2C]">{brgy.barangayName as string}</p>
+                <p className="text-slate-500 mt-1">Sector Code: {brgy.code as string ?? `BRGY-${brgy.barangayId}`}</p>
+                <p className="text-slate-500">Official Seal Symbol: </p>
               </div>
             ))}
           </div>
@@ -29,7 +30,7 @@ export default function SettingsPage() {
 
         {/* Section 2: Stamp Seal Previews */}
         <div>
-          <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-3">
+          <h3 className="text-sm font-serif font-bold text-[#322A2C] border-b border-[#D1D7CE] pb-2 mb-3">
             Registry Stamp Seals Preview
           </h3>
           <div className="flex items-center space-x-6">
@@ -44,7 +45,7 @@ export default function SettingsPage() {
 
         {/* Section 3: Audit Log */}
         <div>
-          <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-2">
+          <h3 className="text-sm font-serif font-bold text-[#322A2C] border-b border-[#D1D7CE] pb-2 mb-2">
             System Audit Log
           </h3>
           {(auditLog as Array<Record<string, unknown>>).length > 0 ? (
@@ -56,7 +57,7 @@ export default function SettingsPage() {
                       {new Date(entry.performedAt as string).toLocaleString()}
                     </span>
                     <span className="text-slate-600">
-                      <strong className="text-[#16324A]">{entry.actionType as string}</strong>
+                      <strong className="text-[#322A2C]">{entry.actionType as string}</strong>
                       {' '}on <span className="font-mono">{entry.tableName as string}</span>
                     </span>
                   </div>

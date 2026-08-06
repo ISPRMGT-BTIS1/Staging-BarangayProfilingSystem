@@ -138,7 +138,7 @@ export default function UsersView() {
     return brgy ? brgy.name : "System-wide";
   };
 
-  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
+  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
   const selectClass = `${inputClass} cursor-pointer`;
   const labelClass = "text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1";
 
@@ -181,7 +181,7 @@ export default function UsersView() {
               </tr>
             ) : usersList.map((user) => (
               <tr key={user.userId}>
-                <td className="font-bold text-[#16324A] text-sm">
+                <td className="font-bold text-[#322A2C] text-sm">
                   {user.fullName}
                 </td>
                 <td className="font-mono text-xs text-slate-500">
@@ -222,12 +222,12 @@ export default function UsersView() {
 
       {/* Add User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
             {/* Modal Header */}
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>👤</span>
+                <span></span>
                 <span>Register New User Profile</span>
               </h3>
               <button
@@ -332,7 +332,7 @@ export default function UsersView() {
                   onChange={handleInputChange}
                   className="accent-[#E8198A]"
                 />
-                <label htmlFor="isActive" className="text-xs font-semibold text-[#16324A] cursor-pointer">
+                <label htmlFor="isActive" className="text-xs font-semibold text-[#322A2C] cursor-pointer">
                   Account is active on registration
                 </label>
               </div>

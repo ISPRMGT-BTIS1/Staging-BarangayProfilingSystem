@@ -28,6 +28,7 @@ export enum CertificateType {
   CERTIFICATION_OF_GUARDIANSHIP         = 'CERTIFICATION_OF_GUARDIANSHIP',
   CERTIFICATION_GOOD_MORAL              = 'CERTIFICATION_GOOD_MORAL',
   EVENT_ATTENDANCE_SHEET                = 'EVENT_ATTENDANCE_SHEET',
+  CERTIFICATION_OF_ONENESS              = 'CERTIFICATION_OF_ONENESS',
   // ── Add new certificate types below ──────────────────────────────────────
   // CERTIFICATION_OF_RESIDENCY          = 'CERTIFICATION_OF_RESIDENCY',
   // BARANGAY_ID                         = 'BARANGAY_ID',
@@ -49,6 +50,7 @@ export const CERTIFICATE_TYPE_LABELS: Record<CertificateType, string> = {
   [CertificateType.CERTIFICATION_OF_GUARDIANSHIP]:      'Certification of Guardianship',
   [CertificateType.CERTIFICATION_GOOD_MORAL]:           'Certification of Good Moral',
   [CertificateType.EVENT_ATTENDANCE_SHEET]:            'Event Attendance Sheet',
+  [CertificateType.CERTIFICATION_OF_ONENESS]:           'Certificate of Oneness',
 }
 
 /**

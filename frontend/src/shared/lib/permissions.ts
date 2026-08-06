@@ -25,6 +25,7 @@ export const PERM = {
   VIEW_USERS:        'view_users',
   VIEW_ROLES:        'view_roles',
   VIEW_SETTINGS:     'view_settings',
+  VIEW_INCIDENTS:    'view_incidents',
 
   // Data mutation
   EDIT_RESIDENTS:    'edit_residents',    // add / edit / delete residents
@@ -32,6 +33,7 @@ export const PERM = {
   MANAGE_EVENTS:     'manage_events',
   ISSUE_CERTIFICATES:'issue_certificates',
   MANAGE_USERS:      'manage_users',
+  MANAGE_INCIDENTS:  'manage_incidents',
 } as const
 
 export type Permission = (typeof PERM)[keyof typeof PERM]
@@ -51,6 +53,7 @@ export const ROLE_PERMISSIONS: Record<RoleId, Permission[]> = {
     PERM.VIEW_USERS,        PERM.MANAGE_USERS,
     PERM.VIEW_ROLES,
     PERM.VIEW_SETTINGS,
+    PERM.VIEW_INCIDENTS,    PERM.MANAGE_INCIDENTS,
   ],
   [ROLE.SECRETARY]: [
     PERM.VIEW_DASHBOARD,
@@ -63,6 +66,7 @@ export const ROLE_PERMISSIONS: Record<RoleId, Permission[]> = {
     PERM.VIEW_USERS,        PERM.MANAGE_USERS,
     PERM.VIEW_ROLES,
     PERM.VIEW_SETTINGS,
+    PERM.VIEW_INCIDENTS,    PERM.MANAGE_INCIDENTS,
   ],
   [ROLE.KAGAWAD]: [
     PERM.VIEW_DASHBOARD,
@@ -72,11 +76,13 @@ export const ROLE_PERMISSIONS: Record<RoleId, Permission[]> = {
     PERM.VIEW_BARANGAYS,
     PERM.VIEW_CERTIFICATES, PERM.ISSUE_CERTIFICATES,
     PERM.VIEW_REPORTS,
+    PERM.VIEW_INCIDENTS,    PERM.MANAGE_INCIDENTS,
   ],
   [ROLE.TANOD]: [
     PERM.VIEW_DASHBOARD,
     PERM.VIEW_RESIDENTS,   // read-only (no EDIT_RESIDENTS)
     PERM.VIEW_EVENTS,      // read-only (no MANAGE_EVENTS)
+    PERM.VIEW_INCIDENTS,   // read-only
   ],
 }
 

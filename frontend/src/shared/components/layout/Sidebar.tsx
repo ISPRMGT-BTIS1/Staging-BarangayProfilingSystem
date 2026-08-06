@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/events',       label: 'Events',       permission: PERM.VIEW_EVENTS },
   { path: '/streets',      label: 'Streets',      permission: PERM.VIEW_BARANGAYS },
   { path: '/certificates', label: 'Certificates', permission: PERM.VIEW_CERTIFICATES },
+  { path: '/incidents',    label: 'Incidents',    permission: PERM.VIEW_INCIDENTS },
   { path: '/reports',      label: 'Reports',      permission: PERM.VIEW_REPORTS },
   { path: '/users',        label: 'Users',        permission: PERM.VIEW_USERS },
   { path: '/roles',        label: 'Roles',        permission: PERM.VIEW_ROLES },
@@ -26,7 +27,7 @@ const NAV_ITEMS: NavItem[] = [
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function NavIcon({ id, active }: { id: string; active: boolean }) {
-  const stroke = active ? 'text-[#D86B98]' : 'text-white/70 group-hover:text-white'
+  const stroke = active ? 'text-[#322A2C]' : 'text-[#322A2C]/70 group-hover:text-[#322A2C]'
   const cls = `h-5 w-5 fill-none stroke-current ${stroke}`
 
   switch (id) {
@@ -74,6 +75,14 @@ function NavIcon({ id, active }: { id: string; active: boolean }) {
           <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
           <rect x="9" y="3" width="6" height="4" rx="2" />
           <path d="M9 12h6" /><path d="M9 16h4" />
+        </svg>
+      )
+    case '/incidents':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="M12 8v4" />
+          <path d="M12 16h.01" />
         </svg>
       )
     case '/reports':
@@ -149,7 +158,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-[#D86B98] text-white flex flex-col justify-between border-r border-[#C45480] select-none h-[calc(100vh-4rem)] sticky top-16 z-30 shadow-md">
+    <aside className="w-64 bg-[#FFFFFF] text-[#322A2C] flex flex-col justify-between border-r border-[#D1D7CE] select-none h-[calc(100vh-4rem)] sticky top-16 z-30 shadow-md">
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {visibleItems.map((item) => {
           const isActive =
@@ -161,8 +170,8 @@ export function Sidebar() {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center space-x-3 px-4 py-3 group text-sm font-semibold tracking-wide uppercase text-left rounded-xl transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-white text-[#D86B98] shadow-sm'
-                  : 'text-white/90 hover:text-white hover:bg-white/15'
+                  ? 'bg-[#F4B5C7] text-[#322A2C] shadow-sm'
+                  : 'text-[#322A2C]/90 hover:text-[#322A2C] hover:bg-[#F4B5C7]/30'
               }`}
             >
               <span className="flex-shrink-0">
@@ -175,13 +184,13 @@ export function Sidebar() {
       </nav>
 
       {/* Footer — user profile + sign out */}
-      <div className="border-t border-[#C4157A]/60 p-4 bg-[#C4157A]/30 space-y-3">
-        <div className="flex items-center space-x-3 bg-white/10 p-2.5 rounded-xl border border-white/20">
-          <div className="h-9 w-9 rounded-full bg-[#2D5F2E] flex items-center justify-center font-bold text-white text-sm shadow-inner flex-shrink-0">
+      <div className="border-t border-[#D1D7CE] p-4 bg-white space-y-3">
+        <div className="flex items-center space-x-3 bg-[#FFF8F8] p-2.5 rounded-xl border border-[#D1D7CE]">
+          <div className="h-9 w-9 rounded-full bg-[#322A2C] flex items-center justify-center font-bold text-white text-sm shadow-inner flex-shrink-0">
             {getInitials(currentUser?.fullName)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate font-sans">
+            <p className="text-sm font-semibold text-[#322A2C] truncate font-sans">
               {currentUser?.fullName ?? 'Guest User'}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">

@@ -11,11 +11,11 @@ import { Sidebar } from './Sidebar'
  */
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-[#FCE4EC] flex flex-col font-sans text-[#1A1A2E]">
+    <div className="min-h-screen bg-[#FFF8F8] flex flex-col font-sans text-[#1A1A2E]">
       <TopBar />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1 flex flex-col min-w-0 bg-[#FCE4EC]">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#FFF8F8]">
           <Outlet />
         </main>
       </div>

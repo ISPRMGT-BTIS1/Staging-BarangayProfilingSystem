@@ -75,6 +75,8 @@ CREATE TABLE residents (
     emergency_contact_name VARCHAR(150),
     emergency_contact_relationship VARCHAR(50),
     emergency_contact_number VARCHAR(20),
+    photo_url TEXT,
+    valid_id_url TEXT,
     created_by INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_by INTEGER,

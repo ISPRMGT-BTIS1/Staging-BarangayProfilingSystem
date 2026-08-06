@@ -26,34 +26,34 @@ export function TopBar() {
   const isResidentsActive = location.pathname.startsWith('/residents')
 
   return (
-    <header className="h-16 border-b-2 border-[#D86B98] bg-white flex items-center justify-between px-6 sticky top-0 z-40 shadow-2xs">
+    <header className="h-16 bg-[#FFF8F8] flex items-center justify-between px-6 sticky top-0 z-40">
       {/* App Name / Branding */}
       <div className="flex items-center space-x-3">
-        <span className="text-xl font-bold tracking-tight font-serif flex items-center space-x-2 text-[#D86B98]">
-          <svg className="h-5 w-5 stroke-current fill-none text-[#D86B98]" viewBox="0 0 24 24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <span className="text-xl font-bold tracking-tight font-serif flex items-center space-x-2 text-[#322A2C]">
+          <svg className="h-5 w-5 stroke-current fill-none text-[#322A2C]" viewBox="0 0 24 24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 18h16" /><path d="M4 10h16" />
             <path d="M5 10v8" /><path d="M12 10v8" /><path d="M19 10v8" />
             <path d="M3 6h18" /><path d="m12 2-9 4h18Z" />
           </svg>
-          <span>Brgy. 46 Zone 6</span>
+          <span>BRGY. System</span>
         </span>
-        <span className="hidden sm:inline-block text-xs uppercase px-2 py-0.5 border border-[#F4C2D7] bg-[#FDF0F5] font-mono rounded text-[#D86B98] tracking-wider">
-          Pasay City
+        <span className="hidden sm:inline-block text-[10px] font-mono tracking-widest uppercase text-[#D86B98] pt-1">
+          INTERNAL CONSOLE
         </span>
       </div>
 
       {/* Search Input */}
       <div className="flex-1 max-w-md mx-8 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg className="h-4 w-4 text-[#D86B98]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg className="h-4 w-4 text-[#D86B98]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <input
           type="text"
           defaultValue={currentQuery}
           placeholder="Search resident name, address, or ID..."
-          className="w-full pl-9 pr-4 py-2 bg-[#FDF0F5] border border-[#F4C2D7] rounded-lg text-sm focus:outline-none focus:border-[#D86B98] focus:bg-white text-[#2D3748] font-sans placeholder-[#D86B98]/50 transition-colors"
+          className="w-full pl-9 pr-4 py-2 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D86B98] text-[#322A2C] font-sans placeholder-[#322A2C]/40 transition-colors shadow-sm"
           onChange={handleSearch}
         />
       </div>
@@ -62,8 +62,8 @@ export function TopBar() {
       <div className="flex items-center space-x-4">
         {currentUser && (
           <div className="hidden md:flex flex-col text-right">
-            <span className="text-xs font-bold text-[#D86B98]">{currentUser.fullName}</span>
-            <span className="text-[9px] text-[#386A45] font-mono font-bold uppercase tracking-wider bg-[#386A45]/10 border border-[#386A45]/20 px-1.5 py-0.5 rounded-sm">
+            <span className="text-xs font-bold text-[#322A2C]">{currentUser.fullName}</span>
+            <span className="text-[9px] text-[#D86B98] font-mono font-bold uppercase tracking-wider bg-transparent px-0 py-0.5 rounded-sm">
               {getUserBarangay()}
             </span>
           </div>

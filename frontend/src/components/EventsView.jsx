@@ -5,8 +5,8 @@ import { supabase } from "../utils/supabaseClient";
 import { logAudit } from "../utils/auditLogger";
 
 // Logos matching certificate templates
-const pasayLogo = new URL("../assets/pasay-logo.jpg", import.meta.url).href;
-const barangayLogo = new URL("../assets/barangay-46-logo.jpeg", import.meta.url).href;
+import pasayLogo from "../assets/pasay-logo.png";
+import barangayLogo from "../assets/barangay-46-logo.png";
 
 function getFullName(r) {
   if (!r) return "";
@@ -36,6 +36,8 @@ export default function EventsView() {
     venue: "Barangay 46 Covered Court",
     goal: "",
     description: "",
+    preparedBy: "Committee on Health Head",
+    approvedBy: "PERLITA B. ADVINCULA",
     selectedResidentIds: [], // List of resident IDs interested/participating
   });
 
@@ -76,7 +78,13 @@ export default function EventsView() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "committee" && prev.preparedBy === `${prev.committee} Head`) {
+        next.preparedBy = `${value} Head`;
+      }
+      return next;
+    });
   };
 
   // Toggle resident participation
@@ -120,6 +128,8 @@ export default function EventsView() {
       venue: formData.venue,
       goal: formData.goal,
       description: formData.description,
+      prepared_by: formData.preparedBy || `${finalCommittee} Head`,
+      approved_by: formData.approvedBy || "PERLITA B. ADVINCULA",
       participants: formData.selectedResidentIds,
       created_at: new Date().toISOString(),
     };
@@ -165,6 +175,8 @@ export default function EventsView() {
         venue: "Barangay 46 Covered Court",
         goal: "",
         description: "",
+        preparedBy: "Committee on Health Head",
+        approvedBy: "PERLITA B. ADVINCULA",
         selectedResidentIds: [],
       });
 
@@ -237,7 +249,7 @@ export default function EventsView() {
           onClick={() => setShowCreateModal(true)}
           className="bg-[#D86B98] hover:bg-[#C45480] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
         >
-          <span>📅</span>
+          <span></span>
           <span>+ Create Event</span>
         </button>
       </div>
@@ -255,7 +267,7 @@ export default function EventsView() {
           />
         </div>
         <div className="text-xs font-mono font-semibold text-slate-500">
-          Showing <span className="text-[#16324A] font-bold">{filteredEvents.length}</span> of {events.length} events
+          Showing <span className="text-[#322A2C] font-bold">{filteredEvents.length}</span> of {events.length} events
         </div>
       </section>
 
@@ -289,8 +301,8 @@ export default function EventsView() {
                   return (
                     <tr key={ev.id}>
                       <td>
-                        <div className="font-bold text-[#16324A] text-sm flex items-center space-x-1.5">
-                          <span>📌</span>
+                        <div className="font-bold text-[#322A2C] text-sm flex items-center space-x-1.5">
+                          <span></span>
                           <span>{ev.title}</span>
                         </div>
                         {ev.description && (
@@ -344,12 +356,12 @@ export default function EventsView() {
 
       {/* ── CREATE EVENT MODAL ──────────────────────────────────────────────── */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>🗓️</span>
+                <span></span>
                 <span>Create New Barangay Event</span>
               </h3>
               <button
@@ -495,6 +507,33 @@ export default function EventsView() {
                     className={inputClass}
                   />
                 </div>
+
+                {/* Prepared By & Approved By */}
+                <div className="flex flex-col">
+                  <label className={labelClass}>
+                    Prepared By (Signatory)
+                  </label>
+                  <input
+                    type="text"
+                    name="preparedBy"
+                    value={formData.preparedBy}
+                    onChange={handleInputChange}
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className={labelClass}>
+                    Approved By (Signatory)
+                  </label>
+                  <input
+                    type="text"
+                    name="approvedBy"
+                    value={formData.approvedBy}
+                    onChange={handleInputChange}
+                    className={inputClass}
+                  />
+                </div>
               </div>
 
               {/* Resident Participants Selector */}
@@ -502,7 +541,7 @@ export default function EventsView() {
                 <div className="flex justify-between items-center">
                   <div>
                     <h4 className="text-xs font-serif font-bold text-[#E8198A] uppercase tracking-wider flex items-center space-x-1.5">
-                      <span>👥</span>
+                      <span></span>
                       <span>Registered / Interested Participants List ({formData.selectedResidentIds.length} Selected)</span>
                     </h4>
                     <p className="text-[10px] text-slate-400 font-sans">
@@ -558,7 +597,7 @@ export default function EventsView() {
                               onChange={() => toggleResidentSelection(r.residentId)}
                               className="accent-[#E8198A]"
                             />
-                            <span className="text-[#16324A]">{getFullName(r)}</span>
+                            <span className="text-[#322A2C]">{getFullName(r)}</span>
                           </div>
                           <div className="flex items-center space-x-3 text-[10px] font-mono text-slate-400">
                             <span>{r.residentId}</span>
@@ -624,13 +663,13 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
     .map((id) => residents.find((r) => r.residentId === id))
     .filter(Boolean);
 
-  // Pad table with extra blank rows for walk-in sign-ins (minimum 15 total rows)
-  const minimumRows = Math.max(15, participantResidents.length + 5);
+  // Pad table with extra blank rows for walk-in sign-ins (minimum 10 total rows)
+  const minimumRows = Math.max(10, participantResidents.length + 2);
   const extraRowsCount = Math.max(0, minimumRows - participantResidents.length);
   const extraBlankRows = Array.from({ length: extraRowsCount });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#322A2C8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
       {/* Print Stylesheet */}
       <style>
         {`@media print {
@@ -642,11 +681,11 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
       </style>
 
       {/* Modal Card wrapper */}
-      <div className="bg-white border-2 border-[#16324A] w-full max-w-4xl h-[90vh] rounded-xs overflow-hidden shadow-2xl flex flex-col print:border-none print:h-auto print:max-w-none print:shadow-none">
+      <div className="bg-white border-2 border-[#322A2C] w-full max-w-4xl h-[90vh] rounded-xs overflow-hidden shadow-2xl flex flex-col print:border-none print:h-auto print:max-w-none print:shadow-none">
         {/* Modal Action Header (Hidden during print) */}
-        <div className="bg-[#16324A] text-white px-6 py-3 flex justify-between items-center no-print flex-shrink-0">
+        <div className="bg-[#322A2C] text-white px-6 py-3 flex justify-between items-center no-print flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <span className="text-lg">🖨️</span>
+            <span className="text-lg"></span>
             <span className="font-serif font-bold text-base">Print Event Attendance Sheet</span>
           </div>
           <div className="flex items-center space-x-3">
@@ -654,7 +693,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
               onClick={handlePrint}
               className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-4 py-1.5 uppercase tracking-wider rounded-xs transition-colors cursor-pointer flex items-center space-x-1"
             >
-              <span>🖨️</span>
+              <span></span>
               <span>Print Now</span>
             </button>
             <button
@@ -668,7 +707,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
 
         {/* Printable Document Body */}
         <div className="flex-1 overflow-y-auto p-8 bg-white text-black font-serif print:p-0 print-container">
-          <div ref={printRef} className="w-[210mm] min-h-[297mm] mx-auto bg-white text-black p-8 relative">
+          <div id="events-print-root" ref={printRef} className="w-[210mm] min-h-[297mm] mx-auto bg-white text-black p-8 relative">
             
             {/* Header Logos */}
             <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6">
@@ -679,7 +718,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
               <div className="text-center flex-1 px-4 leading-tight">
                 <p className="text-xs uppercase font-sans tracking-wide">Republic of the Philippines</p>
                 <p className="text-sm font-bold font-serif uppercase mt-0.5">OFFICE OF THE SANGGUNIANG BARANGAY</p>
-                <p className="text-xs uppercase font-bold text-[#16324A]">BARANGAY 46, ZONE 06</p>
+                <p className="text-xs uppercase font-bold text-[#322A2C]">BARANGAY 46, ZONE 06</p>
                 <p className="text-xs italic font-sans">Pasay City, Metro Manila</p>
               </div>
 
@@ -702,11 +741,11 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
             </div>
 
             {/* Event Summary Details Box */}
-            <div className="border border-black p-4 mb-6 text-xs leading-relaxed font-sans bg-[#F9FAF8] rounded-xs">
+            <div className="border border-black p-4 mb-6 text-xs leading-relaxed font-sans bg-[#FFF8F8] rounded-xs">
               <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                 <div>
                   <span className="font-mono font-bold text-slate-500 uppercase">Event Title:</span>{" "}
-                  <strong className="font-serif text-sm text-[#16324A]">{event.title}</strong>
+                  <strong className="font-serif text-sm text-[#322A2C]">{event.title}</strong>
                 </div>
                 <div>
                   <span className="font-mono font-bold text-slate-500 uppercase">Committee:</span>{" "}
@@ -732,7 +771,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
             {/* Attendance List Table */}
             <table className="w-full border-collapse border border-black text-xs font-sans mb-8">
               <thead>
-                <tr className="bg-[#16324A] text-white">
+                <tr className="bg-[#322A2C] text-white">
                   <th className="border border-black py-2 px-2 text-center w-8 font-mono">#</th>
                   <th className="border border-black py-2 px-3 text-left w-24 font-mono">Resident ID</th>
                   <th className="border border-black py-2 px-3 text-left font-bold">Full Name</th>
@@ -752,7 +791,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
                       <td className="border border-black py-2 px-3 font-mono text-[10px] font-semibold text-slate-600">
                         {r.residentId}
                       </td>
-                      <td className="border border-black py-2 px-3 font-serif font-bold text-sm text-[#16324A]">
+                      <td className="border border-black py-2 px-3 font-serif font-bold text-sm text-[#322A2C]">
                         {getFullName(r)}
                       </td>
                       <td className="border border-black py-2 px-3 text-[11px]">
@@ -790,7 +829,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
               <div>
                 <p className="font-mono text-[10px] uppercase font-bold text-slate-400 mb-6">Prepared By:</p>
                 <div className="w-56 border-b border-black text-center pb-1">
-                  <span className="font-serif font-bold text-sm text-[#16324A]">{event.committee} Head</span>
+                  <span className="font-serif font-bold text-sm text-[#322A2C]">{event.prepared_by || `${event.committee} Head`}</span>
                 </div>
                 <p className="text-[10px] text-slate-400 text-center mt-1">Event Coordinator / Committee Chair</p>
               </div>
@@ -802,7 +841,7 @@ function PrintAttendanceModal({ event, residents, getFullAddress, onClose }) {
               <div>
                 <p className="font-mono text-[10px] uppercase font-bold text-slate-400 mb-6 text-right">Noted &amp; Approved By:</p>
                 <div className="w-56 border-b border-black text-center pb-1">
-                  <span className="font-serif font-bold text-sm text-[#16324A]">PERLITA B. ADVINCULA</span>
+                  <span className="font-serif font-bold text-sm text-[#322A2C]">{event.approved_by || "PERLITA B. ADVINCULA"}</span>
                 </div>
                 <p className="text-[10px] text-slate-400 text-center mt-1">Punong Barangay</p>
               </div>

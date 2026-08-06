@@ -146,7 +146,7 @@ export default function StreetsView() {
     return street.barangayId === barangayFilter;
   });
 
-  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
+  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
   const selectClass = `${inputClass} cursor-pointer`;
   const labelClass = "text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1";
 
@@ -170,7 +170,7 @@ export default function StreetsView() {
       {/* Filters Control Row */}
       <section className="bg-white border border-[#D1D7CE] p-4 rounded-xs flex flex-wrap gap-4 items-center justify-between shadow-2xs">
         <div className="text-xs font-mono font-semibold text-slate-500">
-          Showing <span className="text-[#16324A] font-bold">{filteredStreets.length}</span> of {streetsList.length} total streets
+          Showing <span className="text-[#322A2C] font-bold">{filteredStreets.length}</span> of {streetsList.length} total streets
         </div>
       </section>
 
@@ -193,7 +193,7 @@ export default function StreetsView() {
                     <td className="font-mono text-xs font-semibold tabular-numbers text-slate-500">
                       {street.streetId}
                     </td>
-                    <td className="font-bold text-[#16324A] text-sm">
+                    <td className="font-bold text-[#322A2C] text-sm">
                       {street.streetName}
                     </td>
                     <td className="text-right space-x-2">
@@ -226,12 +226,12 @@ export default function StreetsView() {
 
       {/* Add Street Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
             {/* Modal Header */}
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>🛣️</span>
+                <span></span>
                 <span>Add New Street</span>
               </h3>
               <button
@@ -279,11 +279,11 @@ export default function StreetsView() {
 
       {/* Edit Street Modal */}
       {showEditModal && editStreet && (
-        <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-[#322A2C]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white border-2 border-[#E8198A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
             <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
-                <span>✏️</span>
+                <span></span>
                 <span>Edit Street</span>
               </h3>
               <button

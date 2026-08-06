@@ -12,6 +12,7 @@ import StreetsView from "./components/StreetsView";
 import UsersView from "./components/UsersView";
 import EventsView from "./components/EventsView";
 import CertificatesPage from "./features/certificates/pages/CertificatesPage";
+import IncidentsPage from "./features/incidents/pages/IncidentsPage";
 import { getResidentDisplayName } from "./utils/helpers";
 import { useData } from "./context/DataContext";
 
@@ -106,6 +107,8 @@ function AuthenticatedApp() {
         return <EventsView />;
       case "certificates":
         return <CertificatesPage />;
+      case "incidents":
+        return <IncidentsPage residentsList={residentsList} />;
       case "reports":
         return <ReportsView residentsList={residentsList} />;
       case "streets":
@@ -116,18 +119,18 @@ function AuthenticatedApp() {
         return (
           <div className="flex-1 p-6 overflow-y-auto space-y-6">
             <div>
-              <h1 className="text-3xl font-bold font-serif text-[#16324A]">Settings & Administration</h1>
+              <h1 className="text-3xl font-bold font-serif text-[#322A2C]">Settings & Administration</h1>
               <p className="text-sm text-slate-500 font-sans">Configure local parameters, staff permissions, and registry stamp templates</p>
             </div>
 
             <div className="ledger-container p-5 space-y-6">
               {/* Section 1: Barangay Details */}
               <div>
-                <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-3">
+                <h3 className="text-sm font-serif font-bold text-[#322A2C] border-b border-[#D1D7CE] pb-2 mb-3">
                   Barangay Profiles Config
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="bg-[#F9FAF8] border border-[#D1D7CE] p-3 rounded-xs col-span-2">
+                  <div className="bg-[#FFF8F8] border border-[#D1D7CE] p-3 rounded-xs col-span-2">
                     <p className="font-bold text-[#E8198A]">Barangay Profile Config</p>
                     <p className="text-slate-500 mt-1">Official Name: Barangay 46 Zone 6</p>
                     <p className="text-slate-500">Municipality / City: Lungsod Pasay (Pasay City), Kalakhang Maynila</p>
@@ -138,7 +141,7 @@ function AuthenticatedApp() {
 
               {/* Section 2: Stamped Seals Styling Template */}
               <div>
-                <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-3">
+                <h3 className="text-sm font-serif font-bold text-[#322A2C] border-b border-[#D1D7CE] pb-2 mb-3">
                   Registry Stamp Seals Preview
                 </h3>
                 <div className="flex items-center space-x-6">
@@ -159,7 +162,7 @@ function AuthenticatedApp() {
 
               {/* Section 3: Audit Log */}
               <div>
-                <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 mb-2">
+                <h3 className="text-sm font-serif font-bold text-[#322A2C] border-b border-[#D1D7CE] pb-2 mb-2">
                   System Audit Log
                 </h3>
                 {auditLog.length > 0 ? (
@@ -171,7 +174,7 @@ function AuthenticatedApp() {
                             {new Date(entry.performedAt).toLocaleString()}
                           </span>
                           <span className="text-slate-600">
-                            <strong className="text-[#16324A]">{entry.actionType}</strong> on <span className="font-mono">{entry.tableName}</span>
+                            <strong className="text-[#322A2C]">{entry.actionType}</strong> on <span className="font-mono">{entry.tableName}</span>
                           </span>
                         </div>
                         <span className="font-mono text-[10px] text-slate-400">{entry.recordId}</span>

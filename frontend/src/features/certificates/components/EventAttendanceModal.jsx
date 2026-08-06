@@ -4,8 +4,8 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import { supabase } from "../../../utils/supabaseClient";
 import { logAudit } from "../../../utils/auditLogger";
 
-const pasayLogo = new URL("../../../assets/pasay-logo.jpg", import.meta.url).href;
-const barangayLogo = new URL("../../../assets/barangay-46-logo.jpeg", import.meta.url).href;
+import pasayLogo from "../../../assets/pasay-logo.png";
+import barangayLogo from "../../../assets/barangay-46-logo.png";
 
 function getFullName(r) {
   if (!r) return "";
@@ -26,6 +26,8 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
     venue: "Barangay 46 Covered Court",
     goal: "",
     description: "",
+    preparedBy: "Committee on Health Head",
+    approvedBy: "PERLITA B. ADVINCULA",
     selectedResidentIds: [],
   });
 
@@ -47,6 +49,8 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
         venue: "Barangay 46 Covered Court",
         goal: "",
         description: "",
+        preparedBy: "Committee on Health Head",
+        approvedBy: "PERLITA B. ADVINCULA",
         selectedResidentIds: [],
       });
     }
@@ -56,7 +60,15 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      // If changing committee and preparedBy hasn't been completely custom, we could try to auto-update it
+      // But to be safe and simple, if it exactly matches the old committee head, we update it.
+      if (name === "committee" && prev.preparedBy === `${prev.committee} Head`) {
+        next.preparedBy = `${value} Head`;
+      }
+      return next;
+    });
   };
 
   const toggleResidentSelection = (residentId) => {
@@ -95,6 +107,8 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
       venue: formData.venue,
       goal: formData.goal,
       description: formData.description,
+      prepared_by: formData.preparedBy || `${finalCommittee} Head`,
+      approved_by: formData.approvedBy || "PERLITA B. ADVINCULA",
       participants: formData.selectedResidentIds,
       created_at: new Date().toISOString(),
     };
@@ -146,12 +160,12 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
     .map((id) => residents.find((r) => r.residentId === id))
     .filter(Boolean);
 
-  const minimumRows = Math.max(15, participantResidents.length + 5);
+  const minimumRows = Math.max(10, participantResidents.length + 2);
   const extraRowsCount = Math.max(0, minimumRows - participantResidents.length);
   const extraBlankRows = Array.from({ length: extraRowsCount });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#322A2C8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
       <style>
         {`@media print {
           @page { margin: 10mm; size: A4 portrait; }
@@ -162,12 +176,12 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
       </style>
 
       {/* Modal Container */}
-      <div className="bg-white border-2 border-[#16324A] w-full max-w-4xl h-[90vh] rounded-xs overflow-hidden shadow-2xl flex flex-col print:border-none print:h-auto print:max-w-none print:shadow-none">
+      <div className="bg-white border-2 border-[#322A2C] w-full max-w-4xl h-[90vh] rounded-xs overflow-hidden shadow-2xl flex flex-col print:border-none print:h-auto print:max-w-none print:shadow-none">
         
         {/* Header */}
-        <div className="bg-[#16324A] text-white px-6 py-3 flex justify-between items-center no-print flex-shrink-0">
+        <div className="bg-[#322A2C] text-white px-6 py-3 flex justify-between items-center no-print flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <span className="text-lg">📅</span>
+            <span className="text-lg"></span>
             <span className="font-serif font-bold text-base">
               {stage === "form" ? "Create Event & Generate Attendance Sheet" : "Official Event Attendance Sheet Preview"}
             </span>
@@ -193,7 +207,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                   onClick={handlePrint}
                   className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-4 py-1.5 uppercase tracking-wider rounded-xs transition-colors cursor-pointer flex items-center space-x-1"
                 >
-                  <span>🖨️</span>
+                  <span></span>
                   <span>Print Now</span>
                 </button>
               </>
@@ -220,7 +234,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     placeholder="e.g. Barangay Health & Medical Mission 2026"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                   />
                 </div>
 
@@ -233,7 +247,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     required
                     value={formData.committee}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C] cursor-pointer"
                   >
                     <option value="Committee on Health">Committee on Health</option>
                     <option value="Committee on Youth & Sports">Committee on Youth &amp; Sports</option>
@@ -257,7 +271,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                         placeholder="e.g. Committee on Women & Family"
                         value={customCommittee}
                         onChange={(e) => setCustomCommittee(e.target.value)}
-                        className="w-full border border-[#D1D7CE] bg-white focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                        className="w-full border border-[#D1D7CE] bg-white focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                       />
                     </div>
                   )}
@@ -273,7 +287,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     required
                     value={formData.eventDate}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                   />
                 </div>
 
@@ -288,7 +302,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     placeholder="e.g. 08:00 AM - 12:00 PM"
                     value={formData.eventTime}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                   />
                 </div>
 
@@ -303,7 +317,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     placeholder="e.g. Barangay 46 Covered Court"
                     value={formData.venue}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                   />
                 </div>
 
@@ -315,7 +329,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     placeholder="e.g. Provide free medical checkup to senior citizens"
                     value={formData.goal}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                   />
                 </div>
 
@@ -323,20 +337,46 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                   <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Description</label>
                   <textarea
                     name="description"
-                    rows={2}
-                    placeholder="Provide description or guidelines…"
+                    placeholder="Any additional details..."
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C] min-h-[60px]"
+                  />
+                </div>
+
+                {/* Prepared By & Approved By */}
+                <div className="flex flex-col">
+                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                    Prepared By (Signatory)
+                  </label>
+                  <input
+                    type="text"
+                    name="preparedBy"
+                    value={formData.preparedBy}
+                    onChange={handleInputChange}
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                    Approved By (Signatory)
+                  </label>
+                  <input
+                    type="text"
+                    name="approvedBy"
+                    value={formData.approvedBy}
+                    onChange={handleInputChange}
+                    className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#322A2C]"
                   />
                 </div>
               </div>
 
               {/* Resident Selector */}
-              <div className="border border-[#D1D7CE] rounded-xs p-4 bg-[#F9FAF8] space-y-3">
+              <div className="border border-[#D1D7CE] rounded-xs p-4 bg-[#FFF8F8] space-y-3">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-serif font-bold text-[#16324A] uppercase tracking-wider flex items-center space-x-1.5">
-                    <span>👥</span>
+                  <h4 className="text-xs font-serif font-bold text-[#322A2C] uppercase tracking-wider flex items-center space-x-1.5">
+                    <span></span>
                     <span>Registered / Interested Residents ({formData.selectedResidentIds.length} Selected)</span>
                   </h4>
                 </div>
@@ -346,7 +386,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                   placeholder="Filter residents by name or ID…"
                   value={residentSearch}
                   onChange={(e) => setResidentSearch(e.target.value)}
-                  className="w-full border border-[#D1D7CE] bg-white text-[#16324A] rounded-xs text-xs px-3 py-1.5 focus:outline-none focus:border-[#16324A]"
+                  className="w-full border border-[#D1D7CE] bg-white text-[#322A2C] rounded-xs text-xs px-3 py-1.5 focus:outline-none focus:border-[#322A2C]"
                 />
 
                 <div className="max-h-48 overflow-y-auto border border-[#D1D7CE] bg-white rounded-xs divide-y divide-[#D1D7CE]/40">
@@ -355,7 +395,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     return (
                       <label
                         key={r.residentId}
-                        className={`flex items-center justify-between p-2 text-xs hover:bg-[#F2F4F1] cursor-pointer ${
+                        className={`flex items-center justify-between p-2 text-xs hover:bg-[#FFF8F8] cursor-pointer ${
                           isChecked ? "bg-[#2E5A44]/5 font-semibold" : ""
                         }`}
                       >
@@ -366,7 +406,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                             onChange={() => toggleResidentSelection(r.residentId)}
                             className="accent-[#2E5A44]"
                           />
-                          <span className="text-[#16324A]">{getFullName(r)}</span>
+                          <span className="text-[#322A2C]">{getFullName(r)}</span>
                         </div>
                         <span className="text-[10px] font-mono text-slate-400">{r.residentId}</span>
                       </label>
@@ -386,7 +426,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                 <div className="text-center flex-1 px-4 leading-tight">
                   <p className="text-xs uppercase font-sans tracking-wide">Republic of the Philippines</p>
                   <p className="text-sm font-bold font-serif uppercase mt-0.5">OFFICE OF THE SANGGUNIANG BARANGAY</p>
-                  <p className="text-xs uppercase font-bold text-[#16324A]">BARANGAY 46, ZONE 06</p>
+                  <p className="text-xs uppercase font-bold text-[#322A2C]">BARANGAY 46, ZONE 06</p>
                   <p className="text-xs italic font-sans">Pasay City, Metro Manila</p>
                 </div>
                 <div className="w-20 h-20 flex-shrink-0">
@@ -408,11 +448,11 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
               </div>
 
               {/* Details Box */}
-              <div className="border border-black p-4 mb-6 text-xs leading-relaxed font-sans bg-[#F9FAF8] rounded-xs">
+              <div className="border border-black p-4 mb-6 text-xs leading-relaxed font-sans bg-[#FFF8F8] rounded-xs">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                   <div>
                     <span className="font-mono font-bold text-slate-500 uppercase">Event Title:</span>{" "}
-                    <strong className="font-serif text-sm text-[#16324A]">{(createdEvent || formData).title}</strong>
+                    <strong className="font-serif text-sm text-[#322A2C]">{(createdEvent || formData).title}</strong>
                   </div>
                   <div>
                     <span className="font-mono font-bold text-slate-500 uppercase">Committee:</span>{" "}
@@ -438,7 +478,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
               {/* Attendance Table */}
               <table className="w-full border-collapse border border-black text-xs font-sans mb-8">
                 <thead>
-                  <tr className="bg-[#16324A] text-white">
+                  <tr className="bg-[#322A2C] text-white">
                     <th className="border border-black py-2 px-2 text-center w-8 font-mono">#</th>
                     <th className="border border-black py-2 px-3 text-left w-24 font-mono">Resident ID</th>
                     <th className="border border-black py-2 px-3 text-left font-bold">Full Name</th>
@@ -452,7 +492,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     <tr key={r.residentId} className="even:bg-slate-50/50">
                       <td className="border border-black py-2 px-2 text-center font-mono text-[11px]">{index + 1}</td>
                       <td className="border border-black py-2 px-3 font-mono text-[10px] font-semibold text-slate-600">{r.residentId}</td>
-                      <td className="border border-black py-2 px-3 font-serif font-bold text-sm text-[#16324A]">{getFullName(r)}</td>
+                      <td className="border border-black py-2 px-3 font-serif font-bold text-sm text-[#322A2C]">{getFullName(r)}</td>
                       <td className="border border-black py-2 px-3 text-[11px]">{getFullAddress(r.householdId) || "Barangay 46"}</td>
                       <td className="border border-black py-2 px-3 font-mono text-[11px]">{r.contactNumber || "—"}</td>
                       <td className="border border-black py-2 px-3"></td>
@@ -476,7 +516,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                 <div>
                   <p className="font-mono text-[10px] uppercase font-bold text-slate-400 mb-6">Prepared By:</p>
                   <div className="w-56 border-b border-black text-center pb-1">
-                    <span className="font-serif font-bold text-sm text-[#16324A]">{(createdEvent || formData).committee} Head</span>
+                    <span className="font-serif font-bold text-sm text-[#322A2C]">{(createdEvent && createdEvent.prepared_by) || formData.preparedBy || `${(createdEvent || formData).committee} Head`}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 text-center mt-1">Event Coordinator / Committee Chair</p>
                 </div>
@@ -486,7 +526,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                 <div>
                   <p className="font-mono text-[10px] uppercase font-bold text-slate-400 mb-6 text-right">Noted &amp; Approved By:</p>
                   <div className="w-56 border-b border-black text-center pb-1">
-                    <span className="font-serif font-bold text-sm text-[#16324A]">PERLITA B. ADVINCULA</span>
+                    <span className="font-serif font-bold text-sm text-[#322A2C]">{(createdEvent && createdEvent.approved_by) || formData.approvedBy || "PERLITA B. ADVINCULA"}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 text-center mt-1">Punong Barangay</p>
                 </div>

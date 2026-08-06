@@ -54,7 +54,7 @@ export default function SearchableSelect({
     <div className={`relative ${className}`} ref={wrapperRef}>
       {/* Trigger Button */}
       <div
-        className="w-full border border-[#F8BBD0] bg-[#FFF5F8] focus-within:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 cursor-pointer flex justify-between items-center focus-within:border-[#E8198A] focus-within:ring-1 focus-within:ring-[#E8198A]"
+        className="w-full border border-[#F8BBD0] bg-[#FFF5F8] focus-within:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-2 cursor-pointer flex justify-between items-center focus-within:border-[#E8198A] focus-within:ring-1 focus-within:ring-[#E8198A]"
         onClick={toggleOpen}
       >
         <span className="truncate mr-2">
@@ -89,7 +89,7 @@ export default function SearchableSelect({
                 <div
                   key={opt.value}
                   className={`px-3 py-2 text-xs cursor-pointer hover:bg-[#E8198A] hover:text-white transition-colors ${
-                    String(value) === String(opt.value) ? "bg-[#FCE4EC] text-[#E8198A] font-bold" : "text-[#16324A]"
+                    String(value) === String(opt.value) ? "bg-[#FCE4EC] text-[#E8198A] font-bold" : "text-[#322A2C]"
                   }`}
                   onClick={() => handleSelect(opt.value)}
                 >

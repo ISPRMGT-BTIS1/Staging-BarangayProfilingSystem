@@ -254,9 +254,9 @@ export function DataProvider({ children }) {
         return `${prefix}-${Date.now().toString().slice(-6)}`;
       },
       generatedReports: [
-        { id: "REP-2024-001", name: "2024 Q1 Demographics Summary", type: "PDF", size: "1.2 MB", date: "2024-03-31" },
-        { id: "REP-2024-002", name: "Senior Citizens Masterlist", type: "XLSX", size: "450 KB", date: "2024-04-15" },
-        { id: "REP-2024-003", name: "Registered Voters per Barangay", type: "PDF", size: "890 KB", date: "2024-05-10" }
+        { id: "REP-2024-001", filename: "2024 Q1 Demographics Summary", category: "Demographics", type: "pdf", size: "1.2 MB", date: "2024-03-31" },
+        { id: "REP-2024-002", filename: "Senior Citizens Masterlist", category: "Registry", type: "excel", size: "450 KB", date: "2024-04-15" },
+        { id: "REP-2024-003", filename: "Registered Voters per Barangay", category: "Elections", type: "pdf", size: "890 KB", date: "2024-05-10" }
       ],
       localPrograms: [
         { id: "LP-1", name: "Vaccine Center", location: "Barangay Hall", status: "Active" },

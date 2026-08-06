@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { useData } from "../../../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { CertificationOfGoodMoralPreview } from "../templates/certification-good-moral/preview.tsx";
-import { logCertificateRequest } from "../utils/logCertificateRequest";
+import { logCertificateRequest, generateControlNumber } from "../utils/logCertificateRequest";
+import { supabase } from "../../../utils/supabaseClient";
 
 // ─── constants (barangay-wide, not per-request) ─────────────────────────────
 
@@ -44,10 +45,15 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
   const [address, setAddress] = useState("");
   const [nationality, setNationality] = useState("Filipino");
   const [purpose, setPurpose] = useState("");
+  const [internalPurpose, setInternalPurpose] = useState("");
   const [dateIssued, setDateIssued] = useState(todayIso());
+  const [controlNumber, setControlNumber] = useState("");
 
   // ── stage: 'form' | 'preview' ─────────────────────────────────────────
   const [stage, setStage] = useState("form");
+
+  // ── incident check state ─────────────────────────────────────────────
+  const [incidentWarning, setIncidentWarning] = useState(null);
 
   // close dropdown on outside click
   useEffect(() => {
@@ -71,16 +77,38 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
       setAddress("");
       setNationality("Filipino");
       setPurpose("");
+      setInternalPurpose("");
       setDateIssued(todayIso());
       setStage("form");
+      setIncidentWarning(null);
+      generateControlNumber().then(setControlNumber);
     }
   }, [isOpen]);
 
-  // auto-fill fields when a resident is picked
+  // auto-fill fields when a resident is picked and check for incidents
   useEffect(() => {
-    if (!selectedResident) return;
+    if (!selectedResident) {
+      setIncidentWarning(null);
+      return;
+    }
     setName(getFullName(selectedResident));
     setAddress(getFullAddress(selectedResident.householdId));
+
+    // Check for incident records
+    const checkIncidents = async () => {
+      const { data, error } = await supabase
+        .from('incidents')
+        .select('*')
+        .eq('resident_id', selectedResident.residentId)
+        .in('status', ['Active', 'Ongoing']);
+      
+      if (data && data.length > 0) {
+        setIncidentWarning(data);
+      } else {
+        setIncidentWarning(null);
+      }
+    };
+    checkIncidents();
   }, [selectedResident]);
 
   // ── resident dropdown options ────────────────────────────────────────
@@ -107,7 +135,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
     purpose,
   };
 
-  const canPrint = !!(name && address);
+  const canPrint = !!(name && address && internalPurpose);
 
   // ── print handler ────────────────────────────────────────────────────
   const handlePrint = () => {
@@ -115,8 +143,9 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
       certificateType: 'CERTIFICATION_GOOD_MORAL',
       residentName: name || null,
       residentId: selectedResident?.residentId || null,
-      purpose: null,
+      purpose: internalPurpose || null,
       issuedBy: currentUser?.full_name || currentUser?.fullName || currentUser?.username || (currentUser?.userId ? String(currentUser.userId) : null),
+      controlNumber,
     });
     window.print();
   };
@@ -126,7 +155,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
   // ─────────────────────────────────────────────────────────────────────
   return (
     // 1. Converted inline styles to Tailwind classes so print: modifiers can override them
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#322A2C8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
       
       {/* 2. Added print stylesheet to remove browser URL and Date headers */}
       <style>
@@ -139,9 +168,9 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
       <div className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col w-[980px] max-w-[96vw] max-h-[92vh] overflow-hidden print:w-full print:max-w-none print:h-auto print:max-h-none print:overflow-visible print:border-none print:shadow-none">
         
         {/* ── Header ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0 print:hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#FFF8F8] flex-shrink-0 print:hidden">
           <div>
-            <h2 className="text-base font-serif font-bold text-[#16324A]">
+            <h2 className="text-base font-serif font-bold text-[#322A2C]">
               Certification of Good Moral
             </h2>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-0.5">
@@ -155,8 +184,8 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                 onClick={() => setStage("form")}
                 className={`px-3 py-1.5 cursor-pointer transition-all ${
                   stage === "form"
-                    ? "bg-[#16324A] text-white"
-                    : "bg-white text-slate-500 hover:bg-[#F2F4F1]"
+                    ? "bg-[#322A2C] text-white"
+                    : "bg-white text-slate-500 hover:bg-[#FFF8F8]"
                 }`}
               >
                 Form
@@ -165,8 +194,8 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                 onClick={() => setStage("preview")}
                 className={`px-3 py-1.5 cursor-pointer transition-all ${
                   stage === "preview"
-                    ? "bg-[#16324A] text-white"
-                    : "bg-white text-slate-500 hover:bg-[#F2F4F1]"
+                    ? "bg-[#322A2C] text-white"
+                    : "bg-white text-slate-500 hover:bg-[#FFF8F8]"
                 }`}
               >
                 Preview
@@ -175,7 +204,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
 
             <button
               onClick={onClose}
-              className="ml-2 p-1.5 text-slate-400 hover:text-[#16324A] hover:bg-[#F2F4F1] rounded-xs transition-all cursor-pointer"
+              className="ml-2 p-1.5 text-slate-400 hover:text-[#322A2C] hover:bg-[#FFF8F8] rounded-xs transition-all cursor-pointer"
             >
               <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
                 <path d="M18 6 6 18M6 6l12 12" />
@@ -196,6 +225,24 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
           >
             <div className="p-6 space-y-5 flex-1">
 
+              {/* Incident Warning Alert */}
+              {incidentWarning && (
+                <div className="bg-red-50 border border-red-200 rounded p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <h3 className="text-red-800 font-bold text-xs uppercase tracking-wide mb-1">Warning: Active Incident Records</h3>
+                      <p className="text-red-700 text-xs font-sans leading-relaxed">
+                        This resident has <strong>{incidentWarning.length}</strong> active/ongoing record(s) in the Blotter/Incident module.
+                        <br/><span className="italic mt-1 block opacity-90">Please review their records before issuing this certificate. You may still proceed if authorized.</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Language Selector */}
               <div>
                 <label className="block text-[11px] font-mono uppercase tracking-wider text-[#E8198A] font-bold mb-1.5">
@@ -207,11 +254,11 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                     onClick={() => setLanguage("en")}
                     className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
                       language === "en"
-                        ? "bg-[#16324A] text-white border-[#16324A] shadow-xs"
-                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#F2F4F1]"
+                        ? "bg-[#322A2C] text-white border-[#322A2C] shadow-xs"
+                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#FFF8F8]"
                     }`}
                   >
-                    <span>🇬🇧 English</span>
+                    <span> English</span>
                   </button>
                   <button
                     type="button"
@@ -222,7 +269,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                         : "bg-white text-slate-600 border-[#F8BBD0] hover:bg-[#FCE4EC]"
                     }`}
                   >
-                    <span>🇵🇭 Tagalog</span>
+                    <span> Tagalog</span>
                   </button>
                 </div>
               </div>
@@ -236,7 +283,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#16324A] bg-[#F9FAF8] focus:bg-white text-[#16324A] placeholder-slate-400"
+                      className="w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#322A2C] bg-[#FFF8F8] focus:bg-white text-[#322A2C] placeholder-slate-400"
                       placeholder="Search by name or ID…"
                       value={residentSearch}
                       onChange={(e) => {
@@ -263,7 +310,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                       {filteredResidents.map((r) => (
                         <div
                           key={r.residentId}
-                          className="px-3 py-2.5 text-xs cursor-pointer hover:bg-[#16324A] hover:text-white transition-colors border-b border-[#D1D7CE]/40 last:border-0"
+                          className="px-3 py-2.5 text-xs cursor-pointer hover:bg-[#322A2C] hover:text-white transition-colors border-b border-[#D1D7CE]/40 last:border-0"
                           onClick={() => {
                             setSelectedResident(r);
                             setResidentSearch(getFullName(r));
@@ -279,7 +326,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                 </div>
                 {selectedResident && (
                   <p className="text-[10px] text-emerald-600 mt-1 font-mono">
-                    ✓ Fields auto-filled from resident record — edit below if needed.
+                     Fields auto-filled from resident record — edit below if needed.
                   </p>
                 )}
               </div>
@@ -335,6 +382,17 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
                   />
                 </FormField>
 
+                {/* INTERNAL PURPOSE */}
+                <FormField label="Internal Purpose / Type of Assistance" required>
+                  <textarea
+                    className={`${inputCls} resize-none`}
+                    rows={2}
+                    value={internalPurpose}
+                    onChange={(e) => setInternalPurpose(e.target.value)}
+                    placeholder="Hidden from print. Used for LGU reporting"
+                  />
+                </FormField>
+
                 {/* DATE ISSUED */}
                 <FormField label="Date Issued" required>
                   <input
@@ -348,10 +406,10 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
             </div>
 
             {/* ── Form action bar ──────────────────────────────────── */}
-            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
+            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#FFF8F8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
               <button
                 onClick={onClose}
-                className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#F2F4F1] cursor-pointer transition-all"
+                className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#FFF8F8] cursor-pointer transition-all"
               >
                 Cancel
               </button>
@@ -359,14 +417,14 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setStage("preview")}
-                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#16324A] text-[#16324A] rounded-xs hover:bg-[#16324A]/5 cursor-pointer transition-all"
+                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#322A2C] text-[#322A2C] rounded-xs hover:bg-[#322A2C]/5 cursor-pointer transition-all"
                 >
                   Preview →
                 </button>
                 <button
                   onClick={handlePrint}
                   disabled={!canPrint}
-                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 bg-[#322A2C] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg className="h-3.5 w-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
                     <path d="M6 9V2h12v7" />
@@ -385,14 +443,17 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
               stage === "form" ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="mb-4 flex items-center gap-3 print:hidden">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-                Print Preview
-              </span>
+            <div className="mb-4 flex items-center gap-3 print:hidden w-full max-w-[500px] justify-between px-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                  Print Preview
+                </span>
+                <span className="text-xs font-mono font-bold text-[#322A2C]">{controlNumber}</span>
+              </div>
               <button
                 onClick={handlePrint}
                 disabled={!canPrint}
-                className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-[#322A2C] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <svg className="h-3 w-3 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
                   <path d="M6 9V2h12v7" />
@@ -438,4 +499,4 @@ function FormField({ label, children, required = false }) {
 }
 
 const inputCls =
-  "w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#16324A] bg-[#F9FAF8] focus:bg-white text-[#16324A] placeholder-slate-400 transition-colors";
+  "w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#322A2C] bg-[#FFF8F8] focus:bg-white text-[#322A2C] placeholder-slate-400 transition-colors";

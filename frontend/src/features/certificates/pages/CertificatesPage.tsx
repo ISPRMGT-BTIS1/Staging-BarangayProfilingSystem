@@ -12,6 +12,7 @@ const TYPE_LABELS: Record<string, string> = {
   CERTIFICATION_FIRST_TIME_JOBSEEKER: 'Certification for First Time Jobseekers',
   CERTIFICATION_OF_GUARDIANSHIP: 'Certification of Guardianship',
   CERTIFICATION_GOOD_MORAL: 'Certification of Good Moral',
+  CERTIFICATION_OF_ONENESS: 'Certificate of Oneness',
 }
 
 const TYPE_BADGE_COLORS: Record<string, string> = {
@@ -24,6 +25,7 @@ const TYPE_BADGE_COLORS: Record<string, string> = {
   CERTIFICATION_FIRST_TIME_JOBSEEKER: 'bg-violet-50 text-violet-700 border-violet-200',
   CERTIFICATION_OF_GUARDIANSHIP: 'bg-rose-50 text-rose-700 border-rose-200',
   CERTIFICATION_GOOD_MORAL: 'bg-teal-50 text-teal-700 border-teal-200',
+  CERTIFICATION_OF_ONENESS: 'bg-pink-50 text-pink-700 border-pink-200',
 }
 
 interface CertRecord {
@@ -35,6 +37,7 @@ interface CertRecord {
   issued_by: string | null
   issued_at: string
   or_number: string | null
+  control_number: string | null
   status: string
 }
 
@@ -102,6 +105,7 @@ export default function CertificatesPage() {
       || String(r.resident_name || '').toLowerCase().includes(q)
       || String(r.resident_id || '').toLowerCase().includes(q)
       || String(r.purpose || '').toLowerCase().includes(q)
+      || String(r.control_number || '').toLowerCase().includes(q)
       || String(issuedByText || '').toLowerCase().includes(q)
     return matchType && matchSearch
   })
@@ -120,7 +124,7 @@ export default function CertificatesPage() {
       <div className="space-y-6 print:hidden">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Certificates</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#322A2C]">Certificates</h1>
         <p className="text-sm text-slate-500 font-sans mt-1">
           Request, fill, and print barangay certificate documents
         </p>
@@ -129,14 +133,14 @@ export default function CertificatesPage() {
       {/* Certificate Types Panel */}
       <div className="ledger-container p-5 space-y-4">
         <div className="flex items-center justify-between border-b border-[#D1D7CE] pb-3">
-          <h3 className="text-sm font-serif font-bold text-[#16324A]">
+          <h3 className="text-sm font-serif font-bold text-[#322A2C]">
             Available Certificate Types
           </h3>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono text-[#2E5A44] bg-[rgba(46,90,68,0.06)] border border-[#2E5A44]/30 px-2 py-0.5 rounded-sm uppercase tracking-wider">
               7 Live
             </span>
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider bg-[#F2F4F1] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider bg-[#FFF8F8] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
               2 Coming Soon
             </span>
           </div>
@@ -150,9 +154,9 @@ export default function CertificatesPage() {
         {/* Records Header */}
         <div className="flex items-center justify-between border-b border-[#D1D7CE] pb-3 flex-wrap gap-3">
           <div>
-            <h3 className="text-sm font-serif font-bold text-[#16324A] flex items-center gap-2">
-              📋 Certificate Issuance Records
-              <span className="text-[10px] font-mono font-normal text-slate-400 bg-[#F2F4F1] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
+            <h3 className="text-sm font-serif font-bold text-[#322A2C] flex items-center gap-2">
+               Certificate Issuance Records
+              <span className="text-[10px] font-mono font-normal text-slate-400 bg-[#FFF8F8] border border-[#D1D7CE] px-2 py-0.5 rounded-sm">
                 {filtered.length} record{filtered.length !== 1 ? 's' : ''}
               </span>
             </h3>
@@ -162,7 +166,7 @@ export default function CertificatesPage() {
           </div>
           <button
             onClick={fetchRecords}
-            className="text-[10px] font-mono font-semibold uppercase tracking-wider border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white px-3 py-1.5 rounded-xs transition-colors cursor-pointer"
+            className="text-[10px] font-mono font-semibold uppercase tracking-wider border border-[#322A2C] text-[#322A2C] hover:bg-[#322A2C] hover:text-white px-3 py-1.5 rounded-xs transition-colors cursor-pointer"
           >
             ↻ Refresh
           </button>
@@ -175,7 +179,7 @@ export default function CertificatesPage() {
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+              className="bg-[#FFF8F8] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] font-semibold cursor-pointer"
             >
               <option value="ALL">All Types</option>
               {Object.entries(TYPE_LABELS).map(([k, v]) => (
@@ -189,8 +193,8 @@ export default function CertificatesPage() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Name, ID, or purpose…"
-              className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-1.5 focus:outline-none focus:border-[#16324A] w-52"
+              placeholder="Name, ID, purpose, or control no…"
+              className="border border-[#D1D7CE] bg-[#FFF8F8] focus:bg-white text-[#322A2C] rounded-xs text-xs px-3 py-1.5 focus:outline-none focus:border-[#322A2C] w-64"
             />
           </div>
         </div>
@@ -206,7 +210,7 @@ export default function CertificatesPage() {
               <thead>
                 <tr>
                   <th className="w-8">#</th>
-                  <th>Certificate Type</th>
+                  <th>Certificate Type / Control No.</th>
                   <th>Resident</th>
                   <th>Purpose</th>
                   <th>Issued By</th>
@@ -230,9 +234,12 @@ export default function CertificatesPage() {
                       <span className={`inline-block text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm border ${TYPE_BADGE_COLORS[rec.certificate_type] || 'bg-slate-50 text-slate-700 border-slate-200'}`}>
                         {TYPE_LABELS[rec.certificate_type] || rec.certificate_type}
                       </span>
+                      {rec.control_number && (
+                        <div className="text-[9px] font-mono text-slate-500 mt-1">{rec.control_number}</div>
+                      )}
                     </td>
                     <td>
-                      <div className="font-semibold text-xs text-[#16324A]">
+                      <div className="font-semibold text-xs text-[#322A2C]">
                         {rec.resident_name || <span className="text-slate-400 italic">—</span>}
                       </div>
                       {rec.resident_id && (

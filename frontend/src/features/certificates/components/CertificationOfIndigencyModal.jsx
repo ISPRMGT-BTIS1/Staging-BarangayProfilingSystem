@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useData } from "../../../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { CertificateIndigencyPreview } from "../templates/certification-of-indigency/preview.tsx";
-import { logCertificateRequest } from "../utils/logCertificateRequest";
+import { logCertificateRequest, generateControlNumber } from "../utils/logCertificateRequest";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -72,8 +72,10 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
   const [nationality, setNationality] = useState("");
   const [address, setAddress] = useState("");
   const [purpose, setPurpose] = useState("");
+  const [internalPurpose, setInternalPurpose] = useState("");
   const [issuedDateRaw, setIssuedDateRaw] = useState(todayIso());
   const [punongBarangay, setPunongBarangay] = useState(CAPTAIN_NAME);
+  const [controlNumber, setControlNumber] = useState("");
 
   // ── stage: 'form' | 'preview' ─────────────────────────────────────────
   const [stage, setStage] = useState("form");
@@ -100,9 +102,11 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
       setNationality("");
       setAddress("");
       setPurpose("");
+      setInternalPurpose("");
       setIssuedDateRaw(todayIso());
       setPunongBarangay(CAPTAIN_NAME);
       setStage("form");
+      generateControlNumber().then(setControlNumber);
     }
   }, [isOpen]);
 
@@ -152,7 +156,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
     language,
   };
 
-  const canPrint = !!(fullName && address && purpose);
+  const canPrint = !!(fullName && address && purpose && internalPurpose);
 
   // ── print handler ────────────────────────────────────────────────────
   const handlePrint = () => {
@@ -160,8 +164,9 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
       certificateType: 'CERTIFICATION_OF_INDIGENCY',
       residentName: fullName || null,
       residentId: selectedResident?.residentId || null,
-      purpose: purpose || null,
+      purpose: internalPurpose || null,
       issuedBy: currentUser?.full_name || currentUser?.fullName || currentUser?.username || (currentUser?.userId ? String(currentUser.userId) : null),
+      controlNumber,
     });
     window.print();
   };
@@ -170,7 +175,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
 
   // ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#322A2C8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
 
       {/* Print stylesheet */}
       <style>
@@ -183,9 +188,9 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
       <div className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col w-[980px] max-w-[96vw] max-h-[92vh] overflow-hidden print:w-full print:max-w-none print:h-auto print:max-h-none print:overflow-visible print:border-none print:shadow-none">
 
         {/* ── Header ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0 print:hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#FFF8F8] flex-shrink-0 print:hidden">
           <div>
-            <h2 className="text-base font-serif font-bold text-[#16324A]">
+            <h2 className="text-base font-serif font-bold text-[#322A2C]">
               Certification of Indigency
             </h2>
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-0.5">
@@ -200,8 +205,8 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                 onClick={() => setStage("form")}
                 className={`px-3 py-1.5 cursor-pointer transition-all ${
                   stage === "form"
-                    ? "bg-[#16324A] text-white"
-                    : "bg-white text-slate-500 hover:bg-[#F2F4F1]"
+                    ? "bg-[#322A2C] text-white"
+                    : "bg-white text-slate-500 hover:bg-[#FFF8F8]"
                 }`}
               >
                 Form
@@ -210,8 +215,8 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                 onClick={() => setStage("preview")}
                 className={`px-3 py-1.5 cursor-pointer transition-all ${
                   stage === "preview"
-                    ? "bg-[#16324A] text-white"
-                    : "bg-white text-slate-500 hover:bg-[#F2F4F1]"
+                    ? "bg-[#322A2C] text-white"
+                    : "bg-white text-slate-500 hover:bg-[#FFF8F8]"
                 }`}
               >
                 Preview
@@ -221,7 +226,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
             {/* Close */}
             <button
               onClick={onClose}
-              className="ml-2 p-1.5 text-slate-400 hover:text-[#16324A] hover:bg-[#F2F4F1] rounded-xs transition-all cursor-pointer"
+              className="ml-2 p-1.5 text-slate-400 hover:text-[#322A2C] hover:bg-[#FFF8F8] rounded-xs transition-all cursor-pointer"
             >
               <svg className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
                 <path d="M18 6 6 18M6 6l12 12" />
@@ -253,11 +258,11 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                     onClick={() => setLanguage("en")}
                     className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
                       language === "en"
-                        ? "bg-[#16324A] text-white border-[#16324A] shadow-xs"
-                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#F2F4F1]"
+                        ? "bg-[#322A2C] text-white border-[#322A2C] shadow-xs"
+                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#FFF8F8]"
                     }`}
                   >
-                    <span>🇬🇧 English</span>
+                    <span> English</span>
                   </button>
                   <button
                     type="button"
@@ -268,7 +273,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                         : "bg-white text-slate-600 border-[#F8BBD0] hover:bg-[#FCE4EC]"
                     }`}
                   >
-                    <span>🇵🇭 Tagalog</span>
+                    <span> Tagalog</span>
                   </button>
                 </div>
               </div>
@@ -282,7 +287,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#16324A] bg-[#F9FAF8] focus:bg-white text-[#16324A] placeholder-slate-400"
+                      className="w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#322A2C] bg-[#FFF8F8] focus:bg-white text-[#322A2C] placeholder-slate-400"
                       placeholder="Search by name or ID…"
                       value={residentSearch}
                       onChange={(e) => {
@@ -313,7 +318,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                       {filteredResidents.map((r) => (
                         <div
                           key={r.residentId}
-                          className="px-3 py-2.5 text-xs cursor-pointer hover:bg-[#16324A] hover:text-white transition-colors border-b border-[#D1D7CE]/40 last:border-0"
+                          className="px-3 py-2.5 text-xs cursor-pointer hover:bg-[#322A2C] hover:text-white transition-colors border-b border-[#D1D7CE]/40 last:border-0"
                           onClick={() => {
                             setSelectedResident(r);
                             setResidentSearch(getFullName(r));
@@ -329,7 +334,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                 </div>
                 {selectedResident && (
                   <p className="text-[10px] text-emerald-600 mt-1 font-mono">
-                    ✓ Fields auto-filled from resident record — edit below if needed.
+                     Fields auto-filled from resident record — edit below if needed.
                   </p>
                 )}
               </div>
@@ -384,13 +389,24 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
                 </div>
 
                 {/* PURPOSE */}
-                <FormField label="Purpose" required>
+                <FormField label="Printed Purpose" required>
                   <textarea
                     className={`${inputCls} resize-none`}
-                    rows={3}
+                    rows={2}
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="e.g. Educational Assistance, Scholarship application…"
+                    placeholder="e.g. Educational Assistance, Scholarship, Financial/Medical…"
+                  />
+                </FormField>
+
+                {/* INTERNAL PURPOSE */}
+                <FormField label="Internal Purpose / Type of Assistance" required>
+                  <textarea
+                    className={`${inputCls} resize-none`}
+                    rows={2}
+                    value={internalPurpose}
+                    onChange={(e) => setInternalPurpose(e.target.value)}
+                    placeholder="Hidden from print. Used for LGU reporting"
                   />
                 </FormField>
 
@@ -423,10 +439,10 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
             </div>
 
             {/* ── Form action bar ──────────────────────────────────── */}
-            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
+            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#FFF8F8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
               <button
                 onClick={onClose}
-                className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#F2F4F1] cursor-pointer transition-all"
+                className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#FFF8F8] cursor-pointer transition-all"
               >
                 Cancel
               </button>
@@ -434,14 +450,14 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setStage("preview")}
-                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#16324A] text-[#16324A] rounded-xs hover:bg-[#16324A]/5 cursor-pointer transition-all"
+                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#322A2C] text-[#322A2C] rounded-xs hover:bg-[#322A2C]/5 cursor-pointer transition-all"
                 >
                   Preview →
                 </button>
                 <button
                   onClick={handlePrint}
                   disabled={!canPrint}
-                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="text-xs font-mono uppercase tracking-wider px-4 py-2 bg-[#322A2C] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg className="h-3.5 w-3.5 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
                     <path d="M6 9V2h12v7" />
@@ -460,14 +476,17 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
               stage === "form" ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="mb-4 flex items-center gap-3 print:hidden">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-                Print Preview
-              </span>
+            <div className="mb-4 flex items-center gap-3 print:hidden w-full max-w-[500px] justify-between px-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                  Print Preview
+                </span>
+                <span className="text-xs font-mono font-bold text-[#322A2C]">{controlNumber}</span>
+              </div>
               <button
                 onClick={handlePrint}
                 disabled={!canPrint}
-                className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-[#16324A] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-[#322A2C] text-white rounded-xs hover:bg-[#0f2436] cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <svg className="h-3 w-3 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2">
                   <path d="M6 9V2h12v7" />
@@ -513,4 +532,4 @@ function FormField({ label, children, required = false }) {
 }
 
 const inputCls =
-  "w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#16324A] bg-[#F9FAF8] focus:bg-white text-[#16324A] placeholder-slate-400 transition-colors";
+  "w-full border border-[#D1D7CE] rounded-xs px-3 py-2 text-xs focus:outline-none focus:border-[#322A2C] bg-[#FFF8F8] focus:bg-white text-[#322A2C] placeholder-slate-400 transition-colors";

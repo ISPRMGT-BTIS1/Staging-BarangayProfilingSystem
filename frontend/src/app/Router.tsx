@@ -14,6 +14,7 @@ const HouseholdsPage     = React.lazy(() => import('@/features/households/pages/
 const EventsPage         = React.lazy(() => import('@/components/EventsView'))
 const StreetsPage        = React.lazy(() => import('@/features/barangays/pages/BarangaysPage'))
 const CertificatesPage   = React.lazy(() => import('@/features/certificates/pages/CertificatesPage'))
+const IncidentsPage      = React.lazy(() => import('@/features/incidents/pages/IncidentsPage'))
 const ReportsPage        = React.lazy(() => import('@/features/reports/pages/ReportsPage'))
 const UsersPage          = React.lazy(() => import('@/features/users/pages/UsersPage'))
 const RolesPage          = React.lazy(() => import('@/features/roles/pages/RolesPage'))
@@ -149,6 +150,16 @@ export function AppRouter() {
             element={
               <RequirePermission permission={PERM.VIEW_CERTIFICATES}>
                 <CertificatesPage />
+              </RequirePermission>
+            }
+          />
+
+          {/* Incidents */}
+          <Route
+            path="/incidents"
+            element={
+              <RequirePermission permission={PERM.VIEW_INCIDENTS}>
+                <IncidentsPage />
               </RequirePermission>
             }
           />

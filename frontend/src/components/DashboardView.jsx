@@ -13,6 +13,7 @@ const CERT_TYPE_LABELS = {
   CERTIFICATION_OF_GUARDIANSHIP: "Certification of Guardianship",
   CERTIFICATION_GOOD_MORAL: "Good Moral",
   EVENT_ATTENDANCE: "Event Attendance",
+  CERTIFICATION_OF_ONENESS: "Certificate of Oneness",
 };
 
 const CERT_COLORS = [
@@ -38,6 +39,8 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
   const [certLoading, setCertLoading]     = useState(true);
   const [certSearch, setCertSearch]       = useState("");
   const [certFilterType, setCertFilterType] = useState("ALL");
+  const [certCurrentPage, setCertCurrentPage] = useState(1);
+  const CERT_PAGE_SIZE = 5; // Reduced page size for a cleaner dashboard
 
   useEffect(() => {
     const load = async () => {
@@ -83,13 +86,24 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
   const studentCount   = residentStatuses.filter(s => s.statusType === "Student").length;
   const indigentCount  = residentStatuses.filter(s => s.statusType === "Indigent").length;
 
+  const todayDate = new Date();
+  const minorCount = residentsList.filter(r => {
+    if (!r.birthDate) return false;
+    const bd = new Date(r.birthDate);
+    let age = todayDate.getFullYear() - bd.getFullYear();
+    const m = todayDate.getMonth() - bd.getMonth();
+    if (m < 0 || (m === 0 && todayDate.getDate() < bd.getDate())) age--;
+    return age < 18 && r.residencyStatus !== "Deceased";
+  }).length;
+
   const statusTags = [
-    { label: "Senior Citizen", count: seniorCount,     icon: "🧓", color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200" },
-    { label: "PWD",            count: pwdCount,        icon: "♿", color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200" },
-    { label: "Voter",          count: voterCount,      icon: "🗳️", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
-    { label: "Solo Parent",    count: soloParentCount, icon: "👩‍👦", color: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-200" },
-    { label: "Student",        count: studentCount,    icon: "📚", color: "text-indigo-700",  bg: "bg-indigo-50",  border: "border-indigo-200" },
-    { label: "Indigent",       count: indigentCount,   icon: "🏚️", color: "text-slate-700",   bg: "bg-slate-50",   border: "border-slate-200" },
+    { label: "Senior Citizen", count: seniorCount,     icon: "", color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200" },
+    { label: "PWD",            count: pwdCount,        icon: "", color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200" },
+    { label: "Voter",          count: voterCount,      icon: "", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
+    { label: "Solo Parent",    count: soloParentCount, icon: "", color: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-200" },
+    { label: "Student",        count: studentCount,    icon: "", color: "text-indigo-700",  bg: "bg-indigo-50",  border: "border-indigo-200" },
+    { label: "Minor",          count: minorCount,      icon: "", color: "text-cyan-700",    bg: "bg-cyan-50",    border: "border-cyan-200" },
+    { label: "Indigent",       count: indigentCount,   icon: "", color: "text-slate-700",   bg: "bg-slate-50",   border: "border-slate-200" },
   ];
 
   // ── Certificate analytics ─────────────────────────────────────────────────
@@ -101,6 +115,15 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
   const maxCertCount = certTypeEntries.length > 0 ? certTypeEntries[0][1] : 1;
   const totalCertsIssued = certRecords.length;
 
+  const certPurposeCounts = {};
+  certRecords.forEach(r => {
+    const p = (r.purpose || "Unspecified").trim();
+    const key = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    certPurposeCounts[key] = (certPurposeCounts[key] || 0) + 1;
+  });
+  const certPurposeEntries = Object.entries(certPurposeCounts).sort((a, b) => b[1] - a[1]);
+  const maxPurposeCount = certPurposeEntries.length > 0 ? certPurposeEntries[0][1] : 1;
+
   // ── Certificate records table (filtered) ─────────────────────────────────
   const filteredCerts = certRecords.filter(r => {
     const matchType = certFilterType === "ALL" || r.certificate_type === certFilterType;
@@ -109,9 +132,20 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
       || String(r.resident_name || "").toLowerCase().includes(q)
       || String(r.resident_id || "").toLowerCase().includes(q)
       || String(r.purpose || "").toLowerCase().includes(q)
+      || String(r.control_number || "").toLowerCase().includes(q)
       || String(formatIssuedBy(r.issued_by)).toLowerCase().includes(q);
     return matchType && matchSearch;
   });
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setCertCurrentPage(1);
+  }, [certSearch, certFilterType]);
+
+  // Pagination calculation
+  const certTotalPages = Math.ceil(filteredCerts.length / CERT_PAGE_SIZE) || 1;
+  const certStartIndex = (certCurrentPage - 1) * CERT_PAGE_SIZE;
+  const paginatedCerts = filteredCerts.slice(certStartIndex, certStartIndex + CERT_PAGE_SIZE);
 
   // ── Birthday celebrators ──────────────────────────────────────────────────
   const today = new Date();
@@ -149,7 +183,7 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
       {/* ── Hero: Overall Resident Count ─────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Residents (big hero card) */}
-        <div className="lg:col-span-2 ledger-container p-6 bg-gradient-to-br from-[#16324A] to-[#1e4a6b] text-white border-0 relative overflow-hidden">
+        <div className="lg:col-span-2 ledger-container p-6 bg-gradient-to-br from-[#322A2C] to-[#1e4a6b] text-white border-0 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-6 -translate-x-6" />
           <div className="relative z-10">
@@ -215,11 +249,11 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
 
       {/* ── Resident Status Tags ──────────────────────────────────────────── */}
       <section className="ledger-container p-5">
-        <h2 className="text-lg text-[#16324A] font-serif font-bold mb-4 border-b border-[#D1D7CE] pb-2 flex items-center gap-2">
-          <span>🏷️</span>
+        <h2 className="text-lg text-[#322A2C] font-serif font-bold mb-4 border-b border-[#D1D7CE] pb-2 flex items-center gap-2">
+          <span></span>
           <span>Resident Status Classification</span>
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-[repeat(7,minmax(0,1fr))] gap-4">
           {statusTags.map(({ label, count, icon, color, bg, border }) => (
             <div key={label} className={`${bg} border ${border} rounded-xl p-4 flex flex-col items-center text-center`}>
               <span className="text-2xl mb-1.5">{icon}</span>
@@ -233,11 +267,11 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
       {/* ── Certificate Analytics ─────────────────────────────────────────── */}
       <section className="ledger-container p-5">
         <div className="flex items-center justify-between mb-4 border-b border-[#D1D7CE] pb-2">
-          <h2 className="text-lg text-[#16324A] font-serif font-bold flex items-center gap-2">
-            <span>📜</span>
+          <h2 className="text-lg text-[#322A2C] font-serif font-bold flex items-center gap-2">
+            <span></span>
             <span>Certificates Issued by Type</span>
           </h2>
-          <span className="text-xs font-mono text-slate-500 bg-[#F2F4F1] border border-[#D1D7CE] px-2.5 py-1 rounded-xs font-semibold">
+          <span className="text-xs font-mono text-slate-500 bg-[#FFF8F8] border border-[#D1D7CE] px-2.5 py-1 rounded-xs font-semibold">
             {totalCertsIssued} total
           </span>
         </div>
@@ -276,27 +310,73 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
         )}
       </section>
 
+      {/* ── Certificates Issued by Purpose ──────────────────────────────────────── */}
+      <section className="ledger-container p-5">
+        <div className="flex items-center justify-between mb-4 border-b border-[#D1D7CE] pb-2">
+          <h2 className="text-lg text-[#322A2C] font-serif font-bold flex items-center gap-2">
+            <span></span>
+            <span>Certificates Issued by Purpose</span>
+          </h2>
+          <span className="text-xs font-mono text-slate-500 bg-[#FFF8F8] border border-[#D1D7CE] px-2.5 py-1 rounded-xs font-semibold">
+            {totalCertsIssued} total
+          </span>
+        </div>
+
+        {certLoading ? (
+          <p className="text-xs text-slate-400 italic text-center py-6">Loading purpose analytics…</p>
+        ) : certPurposeEntries.length === 0 ? (
+          <p className="text-xs text-slate-400 italic text-center py-6">No records found.</p>
+        ) : (
+          <div className="space-y-3">
+            {certPurposeEntries.map(([purpose, count], i) => {
+              const c = CERT_COLORS[(i + 3) % CERT_COLORS.length]; // slight offset for different colors
+              const pct = Math.round((count / maxPurposeCount) * 100);
+              return (
+                <div key={purpose} className="flex items-center gap-4">
+                  <span className={`text-[10px] font-mono font-bold ${c.text} w-52 flex-shrink-0 truncate`} title={purpose}>
+                    {purpose}
+                  </span>
+                  <div className="flex-1 h-6 bg-slate-100 rounded-lg overflow-hidden">
+                    <div
+                      className="h-full rounded-lg transition-all duration-700 flex items-center justify-end pr-2"
+                      style={{ width: `${pct}%`, backgroundColor: c.bar }}
+                    >
+                      {pct > 15 && (
+                        <span className="text-[10px] font-bold text-white font-mono">{count}</span>
+                      )}
+                    </div>
+                  </div>
+                  {pct <= 15 && (
+                    <span className="text-xs font-bold font-mono text-slate-700 w-8 text-right">{count}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {/* ── Certificate Issuance Records ─────────────────────────────────── */}
       <section className="ledger-container p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-[#D1D7CE] pb-3">
-          <h2 className="text-lg text-[#16324A] font-serif font-bold flex items-center gap-2">
-            <span>📋</span>
+          <h2 className="text-lg text-[#322A2C] font-serif font-bold flex items-center gap-2">
+            <span></span>
             <span>Certificate Issuance Records</span>
           </h2>
           <div className="flex flex-wrap gap-2">
             {/* Search */}
             <input
               type="text"
-              placeholder="Search name, ID, purpose…"
+              placeholder="Search name, ID, purpose, control no…"
               value={certSearch}
               onChange={e => setCertSearch(e.target.value)}
-              className="text-xs border border-[#D1D7CE] bg-[#F9FAF8] rounded-xs px-3 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] w-52"
+              className="text-xs border border-[#D1D7CE] bg-[#FFF8F8] rounded-xs px-3 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] w-52"
             />
             {/* Type filter */}
             <select
               value={certFilterType}
               onChange={e => setCertFilterType(e.target.value)}
-              className="text-xs border border-[#D1D7CE] bg-[#F9FAF8] rounded-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
+              className="text-xs border border-[#D1D7CE] bg-[#FFF8F8] rounded-xs px-2.5 py-1.5 focus:outline-none focus:border-[#322A2C] text-[#322A2C] font-semibold cursor-pointer"
             >
               <option value="ALL">ALL TYPES</option>
               {Object.entries(CERT_TYPE_LABELS).map(([k, v]) => (
@@ -317,7 +397,7 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
               <thead>
                 <tr>
                   <th className="w-8">#</th>
-                  <th>Certificate Type</th>
+                  <th>Certificate Type / Control No.</th>
                   <th>Resident</th>
                   <th>Purpose</th>
                   <th>Issued By</th>
@@ -326,21 +406,24 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
                 </tr>
               </thead>
               <tbody>
-                {filteredCerts.length > 0 ? (
-                  filteredCerts.map((r, idx) => {
+                {paginatedCerts.length > 0 ? (
+                  paginatedCerts.map((r, idx) => {
                     const typeKey = r.certificate_type;
                     const colorIdx = Object.keys(CERT_TYPE_LABELS).indexOf(typeKey) % CERT_COLORS.length;
                     const c = CERT_COLORS[colorIdx >= 0 ? colorIdx : 0];
                     return (
                       <tr key={r.id}>
-                        <td className="font-mono text-xs text-slate-400">{idx + 1}</td>
+                        <td className="font-mono text-xs text-slate-400">{certStartIndex + idx + 1}</td>
                         <td>
                           <span className={`inline-block text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${c.bg} ${c.text} ${c.border}`}>
                             {CERT_TYPE_LABELS[typeKey] || typeKey}
                           </span>
+                          {r.control_number && (
+                            <p className="text-[10px] font-mono text-slate-500 mt-1">{r.control_number}</p>
+                          )}
                         </td>
                         <td>
-                          <p className="font-semibold text-sm text-[#16324A]">{r.resident_name || "—"}</p>
+                          <p className="font-semibold text-sm text-[#322A2C]">{r.resident_name || "—"}</p>
                           {r.resident_id && (
                             <p className="text-[10px] font-mono text-slate-400">{r.resident_id}</p>
                           )}
@@ -367,6 +450,34 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
             </table>
           </div>
         )}
+        
+        {/* Pagination Controls */}
+        {!certLoading && filteredCerts.length > 0 && (
+          <div className="flex items-center justify-between border-t border-[#D1D7CE] pt-3 mt-2">
+            <span className="text-[10px] font-mono font-semibold text-slate-500">
+              Showing {certStartIndex + 1} to {Math.min(certStartIndex + CERT_PAGE_SIZE, filteredCerts.length)} of {filteredCerts.length} records
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCertCurrentPage(p => Math.max(1, p - 1))}
+                disabled={certCurrentPage === 1}
+                className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 bg-white border border-[#D1D7CE] rounded-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer"
+              >
+                Prev
+              </button>
+              <span className="text-[10px] font-mono font-bold text-[#322A2C] px-2">
+                Page {certCurrentPage} of {certTotalPages}
+              </span>
+              <button
+                onClick={() => setCertCurrentPage(p => Math.min(certTotalPages, p + 1))}
+                disabled={certCurrentPage === certTotalPages}
+                className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600 bg-white border border-[#D1D7CE] rounded-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── Birthday Celebrators (kept at bottom) ────────────────────────── */}
@@ -380,7 +491,7 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
         <div className="bg-[#FDF0F5] border border-[#F4C2D7] p-3.5 rounded-lg">
           <h3 className="text-xs uppercase font-mono tracking-wider text-[#D86B98] font-bold mb-2.5 flex items-center justify-between">
             <span className="flex items-center space-x-1.5">
-              <span>🎂</span>
+              <span></span>
               <span>{isUpcoming ? "Upcoming Birthday Celebrators" : "Residents Celebrating Today"}</span>
             </span>
             <span className="text-[10px] bg-[#D86B98]/10 text-[#D86B98] px-2 py-0.5 rounded font-sans font-semibold">
@@ -401,7 +512,7 @@ export default function DashboardView({ onPrintBirthdays, residentsList: initial
                     </p>
                   </div>
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#D86B98]/10 text-[#D86B98] border border-[#D86B98]/20">
-                    🎉 {isUpcoming ? "Upcoming" : "Today!"}
+                     {isUpcoming ? "Upcoming" : "Today!"}
                   </span>
                 </div>
               ))

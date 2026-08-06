@@ -115,6 +115,9 @@ CREATE TABLE residents (
     emergency_contact_relationship           VARCHAR(50)  NULL,
     emergency_contact_number                  VARCHAR(20)  NULL,
 
+    photo_url                               VARCHAR(MAX) NULL,
+    valid_id_url                            VARCHAR(MAX) NULL,
+
     created_by     INT NULL,
     created_at     DATETIME DEFAULT GETDATE(),
     updated_by     INT NULL,
