@@ -5,8 +5,24 @@ import { logAudit } from "../utils/auditLogger";
 import SearchableSelect from "./SearchableSelect";
 import { parseCSVResidents } from "../utils/csvImporter";
 import { supabase } from "../utils/supabaseClient";
+import { parseSafeInt, calculateResidencyYears } from "../utils/helpers";
 
-const STATUS_TYPES = ["Senior Citizen", "PWD", "Voter", "Student", "Solo Parent", "Indigent", "Other"];
+const STATUS_TYPES = [
+  "Senior Citizen",
+  "PWD",
+  "Voter",
+  "SK Voter",
+  "Student",
+  "Solo Parent",
+  "Indigent",
+  "OFW",
+  "Out of School Youth (OSY)",
+  "Out of School Children (OSC)",
+  "Indigenous Person (IP)",
+  "Labor / Employed",
+  "Unemployed",
+  "Other"
+];
 
 export default function ResidentsView({
   searchQuery,
@@ -56,14 +72,17 @@ export default function ResidentsView({
   // File input ref for CSV import
   const fileInputRef = React.useRef(null);
 
-  // New profiling form state
+  // New profiling form state (RBI Form A & B 2024 Compliant)
   const [formData, setFormData] = useState({
-    firstName: "", middleName: "", lastName: "",
-    birthDate: "",
+    philsysCardNo: "",
+    firstName: "", middleName: "", lastName: "", extensionName: "",
+    birthDate: "", birthPlace: "",
     sex: "Male",
     civilStatus: "Single",
-    contactNumber: "",
+    religion: "",
+    contactNumber: "", emailAddress: "",
     occupation: "", company: "",
+    educationalAttainment: "None", educationStatus: "Graduate",
     citizenship: "Filipino",
     residencyStatus: "Active",
     residencySince: "",
@@ -124,10 +143,13 @@ export default function ResidentsView({
     const barangayName = getHouseholdBarangay(resident.householdId);
     
     // Search filter
-    const matchesSearch = searchQuery
-      ? displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        resident.residentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (resident.occupation && resident.occupation.toLowerCase().includes(searchQuery.toLowerCase()))
+    const q = (searchQuery || "").toLowerCase();
+    const matchesSearch = q
+      ? String(displayName || "").toLowerCase().includes(q) ||
+        String(resident.residentId || "").toLowerCase().includes(q) ||
+        String(resident.philsysCardNo || "").toLowerCase().includes(q) ||
+        String(resident.contactNumber || "").toLowerCase().includes(q) ||
+        String(resident.occupation || "").toLowerCase().includes(q)
       : true;
 
     // Residency status filter
@@ -221,22 +243,27 @@ export default function ResidentsView({
     const isEdit = formData.isEditing;
     
     const dbPayload = {
+      philsys_card_no: formData.philsysCardNo || null,
       first_name: formData.firstName,
-      middle_name: formData.middleName,
+      middle_name: formData.middleName || null,
       last_name: formData.lastName,
+      extension_name: formData.extensionName || null,
       birth_date: formData.birthDate,
+      birth_place: formData.birthPlace || null,
       sex: formData.sex,
       civil_status: formData.civilStatus,
+      religion: formData.religion || null,
       contact_number: formData.contactNumber || null,
+      email_address: formData.emailAddress || null,
       occupation: formData.occupation || null,
       company: formData.company || null,
       citizenship: formData.citizenship || "Filipino",
       residency_status: formData.residencyStatus,
-      residency_length_years: formData.residencySince ? parseFloat(formData.residencySince) : null, // NOTE: residencySince needs to be numeric in form or DB schema change, assuming null for now. 
+      residency_length_years: calculateResidencyYears(formData.residencySince),
       is_dependent: formData.isDependent,
-      household_id: parseInt(String(formData.householdId).replace(/\D/g, ''), 10) || null,
-      family_id: parseInt(String(formData.familyId).replace(/\D/g, ''), 10) || null,
-      parent_id: formData.parentId ? parseInt(String(formData.parentId).replace(/\D/g, ''), 10) : null,
+      household_id: parseSafeInt(formData.householdId),
+      family_id: parseSafeInt(formData.familyId),
+      parent_id: parseSafeInt(formData.parentId),
       emergency_contact_name: formData.emergencyContactName || null,
       emergency_contact_relationship: formData.emergencyContactRelationship || null,
       emergency_contact_number: formData.emergencyContactNumber || null,
@@ -292,12 +319,15 @@ export default function ResidentsView({
       
       // Reset form
       setFormData({
-        firstName: "", middleName: "", lastName: "",
-        birthDate: "",
+        philsysCardNo: "",
+        firstName: "", middleName: "", lastName: "", extensionName: "",
+        birthDate: "", birthPlace: "",
         sex: "Male",
         civilStatus: "Single",
-        contactNumber: "",
+        religion: "",
+        contactNumber: "", emailAddress: "",
         occupation: "", company: "",
+        educationalAttainment: "None", educationStatus: "Graduate",
         citizenship: "Filipino",
         residencyStatus: "Active",
         residencySince: "",
@@ -348,13 +378,18 @@ export default function ResidentsView({
     const otherStatus = residentStatuses.find(rs => rs.residentId === resident.residentId && rs.statusType === "Other");
 
     setFormData({
-      firstName: resident.firstName, middleName: resident.middleName || "", lastName: resident.lastName,
-      birthDate: resident.birthDate,
+      philsysCardNo: resident.philsysCardNo || "",
+      firstName: resident.firstName, middleName: resident.middleName || "", lastName: resident.lastName, extensionName: resident.extensionName || "",
+      birthDate: resident.birthDate, birthPlace: resident.birthPlace || "",
       sex: resident.sex,
       civilStatus: resident.civilStatus,
+      religion: resident.religion || "",
       contactNumber: resident.contactNumber !== "N/A" ? resident.contactNumber : "",
+      emailAddress: resident.emailAddress || "",
       occupation: resident.occupation !== "Unemployed" ? resident.occupation : "", 
       company: resident.company !== "N/A" ? resident.company : "",
+      educationalAttainment: resident.educationalAttainment || "None",
+      educationStatus: resident.educationStatus || "Graduate",
       citizenship: resident.citizenship,
       residencyStatus: resident.residencyStatus,
       residencySince: resident.residencySince || "",
@@ -392,44 +427,51 @@ export default function ResidentsView({
       }
       
       try {
-        const insertPayloads = parsed.map(res => ({
-          first_name: res.firstName,
-          middle_name: res.middleName,
-          last_name: res.lastName,
-          birth_date: res.birthDate,
-          sex: res.sex,
-          civil_status: res.civilStatus,
-          contact_number: res.contactNumber,
-          occupation: res.occupation,
-          company: res.company,
-          citizenship: res.citizenship || 'Filipino',
-          residency_status: res.residencyStatus || 'Active',
-          residency_length_years: res.residencySince ? parseFloat(res.residencySince) : null,
-          is_dependent: res.isDependent ?? true,
-          household_id: parseInt(String(res.householdId).replace(/\D/g, ''), 10) || null,
-          family_id: parseInt(String(res.familyId).replace(/\D/g, ''), 10) || null,
-          parent_id: res.parentId ? parseInt(String(res.parentId).replace(/\D/g, ''), 10) : null,
-          emergency_contact_name: res.emergencyContactName,
-          emergency_contact_relationship: res.emergencyContactRelationship,
-          emergency_contact_number: res.emergencyContactNumber,
-          created_by: currentUser?.userId || null
-        }));
+        const insertPayloads = parsed.map(res => {
+          const hhId = res.householdId ? parseInt(String(res.householdId).replace(/\D/g, ''), 10) : NaN;
+          const famId = res.familyId ? parseInt(String(res.familyId).replace(/\D/g, ''), 10) : NaN;
+          const pId = res.parentId ? parseInt(String(res.parentId).replace(/\D/g, ''), 10) : NaN;
+
+          return {
+            first_name: res.firstName,
+            middle_name: res.middleName || null,
+            last_name: res.lastName,
+            birth_date: res.birthDate || null,
+            sex: res.sex || 'Male',
+            civil_status: res.civilStatus || 'Single',
+            contact_number: res.contactNumber || null,
+            occupation: res.occupation || null,
+            company: res.company || null,
+            citizenship: res.citizenship || 'Filipino',
+            residency_status: res.residencyStatus || 'Active',
+            residency_length_years: res.residencySince ? (parseFloat(res.residencySince) || null) : null,
+            is_dependent: res.isDependent ?? false,
+            household_id: !isNaN(hhId) && hhId > 0 ? hhId : null,
+            family_id: !isNaN(famId) && famId > 0 ? famId : null,
+            parent_id: !isNaN(pId) && pId > 0 ? pId : null,
+            emergency_contact_name: res.emergencyContactName || null,
+            emergency_contact_relationship: res.emergencyContactRelationship || null,
+            emergency_contact_number: res.emergencyContactNumber || null,
+            created_by: currentUser?.userId && typeof currentUser.userId === 'number' ? currentUser.userId : null
+          };
+        });
         
         const { data, error } = await supabase.from('residents').insert(insertPayloads).select('resident_id');
         
         if (error) throw error;
         
-        const insertedIds = data.map(r => r.resident_id);
+        const insertedIds = (data || []).map(r => r.resident_id);
         
-        // Batch audit logging could be done here, or single log for import
+        // Audit logging
         await logAudit("residents", insertedIds[0] || 0, "CREATE", currentUser?.userId || null, `Imported ${insertedIds.length} residents from CSV`);
         
-        alert(`Successfully imported ${insertedIds.length} residents.`);
+        alert(`Successfully imported ${insertedIds.length} residents!`);
         if (refetch) refetch();
         
       } catch (err) {
         console.error("CSV import failed:", err);
-        alert("Failed to import CSV to database. See console for details.");
+        const detailMsg = err?.message || err?.details || err?.hint || JSON.stringify(err);
+        alert(`CSV Import Failed: ${detailMsg}`);
       }
     };
     reader.readAsText(file);
@@ -441,10 +483,10 @@ export default function ResidentsView({
     return residentStatuses.filter(rs => rs.residentId === residentId);
   };
 
-  // Input field class (reused)
-  const inputClass = "border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]";
+  // Input field class (reused - Pink Theme)
+  const inputClass = "border border-[#F4C2D7] bg-[#FDF4F8] focus:bg-white text-[#2D3748] rounded-md text-xs px-3 py-2 focus:outline-none focus:border-[#D86B98] focus:ring-1 focus:ring-[#D86B98] transition-all";
   const selectClass = `${inputClass} cursor-pointer`;
-  const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
+  const labelClass = "text-[10px] uppercase font-mono font-bold text-[#D86B98] mb-1";
 
   // ── Quick Archive / Status Change ───────────────────────────────────────────
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -484,15 +526,54 @@ export default function ResidentsView({
     }
   };
 
+  // Download CSV Template Helper
+  const downloadCSVTemplate = () => {
+    const headers = [
+      "First Name", "Middle Name", "Last Name", "Birth Date", "Sex",
+      "Civil Status", "Contact Number", "Occupation", "Company", "Citizenship",
+      "Residency Length", "Is Dependent", "Household ID", "Family ID",
+      "Emergency Contact Name", "Emergency Contact Relationship", "Emergency Contact Number"
+    ];
+    const sampleRow1 = [
+      "Juan", "Santos", "Dela Cruz", "1990-05-15", "Male",
+      "Married", "09171234567", "Software Engineer", "Tech Corp", "Filipino",
+      "5", "FALSE", "1", "1",
+      "Maria Dela Cruz", "Spouse", "09187654321"
+    ];
+    const sampleRow2 = [
+      "Maria", "Reyes", "Dela Cruz", "1992-08-20", "Female",
+      "Married", "09187654321", "Teacher", "Pasay High School", "Filipino",
+      "5", "FALSE", "1", "1",
+      "Juan Dela Cruz", "Spouse", "09171234567"
+    ];
+    const csvContent = [headers.join(","), sampleRow1.join(","), sampleRow2.join(",")].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "residents_import_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#8A244E]">Resident Registry Ledger</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#D86B98]">Resident Registry Ledger</h1>
           <p className="text-sm text-slate-500 font-sans">Official profile log database for verifying residency and program qualifications</p>
         </div>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={downloadCSVTemplate}
+            className="border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-2xs transition-all inline-flex items-center space-x-1.5 bg-white"
+            title="Download a sample CSV file format"
+          >
+            <span>📥</span>
+            <span>Download Template</span>
+          </button>
           <input 
             type="file" 
             accept=".csv" 
@@ -502,7 +583,7 @@ export default function ResidentsView({
           />
           <button
             onClick={() => fileInputRef.current.click()}
-            className="border border-[#8A244E] text-[#8A244E] hover:bg-[#8A244E] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 bg-white"
+            className="border border-[#D86B98] text-[#D86B98] hover:bg-[#D86B98] hover:text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 bg-white"
           >
             <span>📄</span>
             <span>Import CSV</span>
@@ -510,7 +591,7 @@ export default function ResidentsView({
           {canEdit && (
             <button
               onClick={() => setShowNewProfilingModal(true)}
-              className="bg-[#2D5F2E] hover:bg-[#1B4020] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
+              className="bg-[#D86B98] hover:bg-[#C45480] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
             >
               <span className="text-sm font-bold">+</span>
               <span>New Profiling</span>
@@ -710,270 +791,315 @@ export default function ResidentsView({
       {/* Profiling Form Modal — Full-page with collapsible sections */}
       {showNewProfilingModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>📋</span>
                 <span>{formData.isEditing ? "Edit Profiling Record" : "Resident Registry Profiling Form"}</span>
               </h3>
               <button
                 onClick={() => setShowNewProfilingModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 font-sans">
+            <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden font-sans">
               
-              {/* Section A — Personal Information */}
-              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
-                <button type="button" onClick={() => toggleSection("personal")}
-                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
-                  <span>Section A — Personal Information</span>
-                  <span>{expandedSections.personal ? "▲" : "▼"}</span>
-                </button>
-                {expandedSections.personal && (
-                  <div className="p-4 grid grid-cols-3 gap-4">
-                    <div className="flex flex-col">
-                      <label className={labelClass}>First Name <span className="text-red-600">*</span></label>
-                      <input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange} placeholder="e.g. Juan" className={inputClass} />
+              {/* Scrollable Form Body */}
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
+                {/* Section A — Personal Information (RBI Form B Compliant) */}
+                <div className="border border-[#F8BBD0] rounded-xs relative">
+                  <button type="button" onClick={() => toggleSection("personal")}
+                    className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
+                    <span>Section A — Personal Information</span>
+                    <span>{expandedSections.personal ? "▲" : "▼"}</span>
+                  </button>
+                  {expandedSections.personal && (
+                    <div className="p-4 grid grid-cols-3 gap-4 bg-white rounded-b-xs">
+                      <div className="col-span-3 flex flex-col max-w-sm">
+                        <label className={labelClass}>PhilSys Card No. (National ID)</label>
+                        <input type="text" name="philsysCardNo" value={formData.philsysCardNo} onChange={handleInputChange} placeholder="e.g. 1234-5678-9012-3456" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>First Name <span className="text-red-600">*</span></label>
+                        <input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange} placeholder="e.g. Juan" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Middle Name</label>
+                        <input type="text" name="middleName" value={formData.middleName} onChange={handleInputChange} placeholder="Optional" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Last Name <span className="text-red-600">*</span></label>
+                        <input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange} placeholder="e.g. Dela Cruz" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Suffix / Extension</label>
+                        <input type="text" name="extensionName" value={formData.extensionName} onChange={handleInputChange} placeholder="e.g. Jr., Sr., III" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Date of Birth <span className="text-red-600">*</span></label>
+                        <input type="date" name="birthDate" required value={formData.birthDate} onChange={handleInputChange} className={inputClass} />
+                        {formData.birthDate && (
+                          <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            Age: {calculateAge(formData.birthDate)} years
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Place of Birth</label>
+                        <input type="text" name="birthPlace" value={formData.birthPlace} onChange={handleInputChange} placeholder="e.g. Pasay City, Manila" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Sex</label>
+                        <select name="sex" value={formData.sex} onChange={handleInputChange} className={selectClass}>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Civil Status</label>
+                        <select name="civilStatus" value={formData.civilStatus} onChange={handleInputChange} className={selectClass}>
+                          <option value="Single">Single</option>
+                          <option value="Married">Married</option>
+                          <option value="Widowed">Widowed</option>
+                          <option value="Separated">Separated</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Religion</label>
+                        <input type="text" name="religion" value={formData.religion} onChange={handleInputChange} placeholder="e.g. Roman Catholic" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Citizenship</label>
+                        <input type="text" name="citizenship" value={formData.citizenship} onChange={handleInputChange} className={inputClass} />
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Middle Name</label>
-                      <input type="text" name="middleName" value={formData.middleName} onChange={handleInputChange} placeholder="Optional" className={inputClass} />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Last Name <span className="text-red-600">*</span></label>
-                      <input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange} placeholder="e.g. Dela Cruz" className={inputClass} />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Date of Birth <span className="text-red-600">*</span></label>
-                      <input type="date" name="birthDate" required value={formData.birthDate} onChange={handleInputChange} className={inputClass} />
-                      {formData.birthDate && (
-                        <span className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Age: {calculateAge(formData.birthDate)} years
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Sex</label>
-                      <select name="sex" value={formData.sex} onChange={handleInputChange} className={selectClass}>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Civil Status</label>
-                      <select name="civilStatus" value={formData.civilStatus} onChange={handleInputChange} className={selectClass}>
-                        <option value="Single">Single</option>
-                        <option value="Married">Married</option>
-                        <option value="Widowed">Widowed</option>
-                        <option value="Separated">Separated</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Citizenship</label>
-                      <input type="text" name="citizenship" value={formData.citizenship} onChange={handleInputChange} className={inputClass} />
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
-              {/* Section B — Address & Household Assignment */}
-              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
-                <button type="button" onClick={() => toggleSection("address")}
-                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
-                  <span>Section B — Address & Household Assignment</span>
-                  <span>{expandedSections.address ? "▲" : "▼"}</span>
-                </button>
-                {expandedSections.address && (
-                  <div className="p-4 grid grid-cols-2 gap-4">
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Street</label>
-                      <select value={selectedStreetId} onChange={handleStreetChange} className={selectClass}>
-                        <option value="">Select Street...</option>
-                        {filteredStreets.map(s => (
-                          <option key={s.streetId} value={s.streetId}>{s.streetName}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Household</label>
-                      <select name="householdId" value={formData.householdId} onChange={handleInputChange} className={selectClass}>
-                        <option value="">Select Household...</option>
-                        {filteredHouseholds.map(h => {
-                          const addr = addresses.find(a => a.addressId === h.addressId);
-                          const st = addr ? streets.find(s => s.streetId === addr.streetId) : null;
-                          return (
-                            <option key={h.householdId} value={h.householdId}>
-                              {h.householdId}: {addr?.houseNo} {st?.streetName || ""}
+                {/* Section B — Address & Household Assignment */}
+                <div className="border border-[#F8BBD0] rounded-xs relative">
+                  <button type="button" onClick={() => toggleSection("address")}
+                    className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
+                    <span>Section B — Address & Household Assignment</span>
+                    <span>{expandedSections.address ? "▲" : "▼"}</span>
+                  </button>
+                  {expandedSections.address && (
+                    <div className="p-4 grid grid-cols-2 gap-4 bg-white rounded-b-xs">
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Street</label>
+                        <select value={selectedStreetId} onChange={handleStreetChange} className={selectClass}>
+                          <option value="">Select Street...</option>
+                          {filteredStreets.map(s => (
+                            <option key={s.streetId} value={s.streetId}>{s.streetName}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Household</label>
+                        <select name="householdId" value={formData.householdId} onChange={handleInputChange} className={selectClass}>
+                          <option value="">Select Household...</option>
+                          {filteredHouseholds.map(h => {
+                            const addr = addresses.find(a => a.addressId === h.addressId);
+                            const st = addr ? streets.find(s => s.streetId === addr.streetId) : null;
+                            return (
+                              <option key={h.householdId} value={h.householdId}>
+                                {h.householdId}: {addr?.houseNo} {st?.streetName || ""}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Family Unit</label>
+                        <select name="familyId" value={formData.familyId} onChange={handleInputChange} className={selectClass}>
+                          <option value="">Select Family...</option>
+                          {filteredFamilies.map(f => (
+                            <option key={f.familyId} value={f.familyId}>
+                            {f.familyId}: Head - {getFamilyHeadName(f.familyId)}
                             </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Family Unit</label>
-                      <select name="familyId" value={formData.familyId} onChange={handleInputChange} className={selectClass}>
-                        <option value="">Select Family...</option>
-                        {filteredFamilies.map(f => (
-                          <option key={f.familyId} value={f.familyId}>
-                          {f.familyId}: Head - {getFamilyHeadName(f.familyId)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Residency Since (Date)</label>
-                      <input type="date" name="residencySince" value={formData.residencySince} onChange={handleInputChange} className={inputClass} />
-                    </div>
-                    <div className="flex flex-col justify-end">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" name="isDependent" checked={!formData.isDependent}
-                          onChange={(e) => setFormData(prev => ({ ...prev, isDependent: !e.target.checked }))}
-                          className="accent-[#2E5A44]" />
-                        <span className="text-xs font-semibold text-[#16324A]">This person is the Family Head</span>
-                      </label>
-                    </div>
-                    <div className="col-span-2 flex flex-col">
-                      <label className={labelClass}>Parent (Linked Resident)</label>
-                      <SearchableSelect
-                        name="parentId"
-                        value={formData.parentId}
-                        onChange={handleInputChange}
-                        options={[
-                          { value: "", label: "None — No parent link" },
-                          ...residentsList.filter(r => r.residencyStatus !== "Deceased").map(r => ({
-                            value: r.residentId,
-                            label: `${r.residentId}: ${getResidentShortName(r)}`
-                          }))
-                        ]}
-                        placeholder="Search and select parent..."
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Section C — Work & Contact */}
-              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
-                <button type="button" onClick={() => toggleSection("work")}
-                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
-                  <span>Section C — Work & Contact</span>
-                  <span>{expandedSections.work ? "▲" : "▼"}</span>
-                </button>
-                {expandedSections.work && (
-                  <div className="p-4 grid grid-cols-2 gap-4">
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Occupation</label>
-                      <input type="text" name="occupation" value={formData.occupation} onChange={handleInputChange} placeholder="e.g. Sari-sari owner" className={inputClass} />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Company / Workplace</label>
-                      <input type="text" name="company" value={formData.company} onChange={handleInputChange} placeholder="Complete with area/address" className={inputClass} />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Contact Number</label>
-                      <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g. 09171234567" className={inputClass} />
-                    </div>
-                    <div className="col-span-2 border-t border-[#D1D7CE]/40 pt-3 mt-1">
-                      <p className="text-[10px] uppercase font-mono font-bold text-slate-400 mb-2">Emergency Contact</p>
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Emergency Contact Name</label>
-                      <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleInputChange} className={inputClass} />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Relationship</label>
-                      <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleInputChange} placeholder="e.g. Spouse, Parent" className={inputClass} />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className={labelClass}>Emergency Contact Number</label>
-                      <input type="text" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleInputChange} className={inputClass} />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Section D — Resident Statuses */}
-              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
-                <button type="button" onClick={() => toggleSection("statuses")}
-                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
-                  <span>Section D — Resident Statuses</span>
-                  <span>{expandedSections.statuses ? "▲" : "▼"}</span>
-                </button>
-                {expandedSections.statuses && (
-                  <div className="p-4">
-                    <p className="text-xs text-slate-500 mb-3">Toggle applicable status tags for this resident:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {STATUS_TYPES.map(type => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => toggleStatus(type)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-xs border transition-all cursor-pointer ${
-                            formData.selectedStatuses.includes(type)
-                              ? "bg-[#2E5A44] text-white border-[#2E5A44]"
-                              : "bg-white text-slate-600 border-[#D1D7CE] hover:border-[#16324A] hover:text-[#16324A]"
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                    {formData.selectedStatuses.includes("Other") && (
-                      <div className="mt-4 pt-3 border-t border-[#D1D7CE]/40">
-                        <label className={labelClass}>Specify Other Status Details</label>
-                        <input
-                          type="text"
-                          name="otherStatusNotes"
-                          value={formData.otherStatusNotes}
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Residency Since (Date)</label>
+                        <input type="date" name="residencySince" value={formData.residencySince} onChange={handleInputChange} className={inputClass} />
+                      </div>
+                      <div className="flex flex-col justify-end">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input type="checkbox" name="isDependent" checked={!formData.isDependent}
+                            onChange={(e) => setFormData(prev => ({ ...prev, isDependent: !e.target.checked }))}
+                            className="accent-[#E8198A]" />
+                          <span className="text-xs font-semibold text-[#16324A]">This person is the Family Head</span>
+                        </label>
+                      </div>
+                      <div className="col-span-2 flex flex-col relative z-[60]">
+                        <label className={labelClass}>Parent (Linked Resident)</label>
+                        <SearchableSelect
+                          name="parentId"
+                          value={formData.parentId}
                           onChange={handleInputChange}
-                          placeholder="e.g. Requires regular check-up"
-                          className={inputClass}
+                          options={[
+                            { value: "", label: "None — No parent link" },
+                            ...residentsList.filter(r => r.residencyStatus !== "Deceased").map(r => ({
+                              value: r.residentId,
+                              label: `${r.residentId}: ${getResidentShortName(r)}`
+                            }))
+                          ]}
+                          placeholder="Search and select parent..."
                         />
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Section E — Registry Status */}
-              <div className="border border-[#D1D7CE] rounded-xs overflow-hidden">
-                <button type="button" onClick={() => toggleSection("registry")}
-                  className="w-full flex justify-between items-center bg-[#F2F4F1] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#16324A] cursor-pointer hover:bg-[#e8ebe5] transition-colors">
-                  <span>Section E — Registry Status</span>
-                  <span>{expandedSections.registry ? "▲" : "▼"}</span>
-                </button>
-                {expandedSections.registry && (
-                  <div className="p-4">
-                    <div className="flex flex-col max-w-xs">
-                      <label className={labelClass}>Residency Status</label>
-                      <select name="residencyStatus" value={formData.residencyStatus} onChange={handleInputChange} className={`${selectClass} font-semibold`}>
-                        <option value="Active">Active Record</option>
-                        <option value="Inactive">Inactive Record</option>
-                        <option value="Moved">Moved Outside Barangay</option>
-                        <option value="Deceased">Deceased</option>
-                      </select>
                     </div>
-                    {formData.residencyStatus === "Deceased" && (
-                      <div className="mt-3 bg-[#9B3D30]/10 border border-[#9B3D30]/30 text-[#9B3D30] text-xs font-semibold px-4 py-2.5 rounded-xs flex items-center space-x-2">
-                        <span>⚠️</span>
-                        <span>This action requires supervisor confirmation.</span>
+                  )}
+                </div>
+
+                {/* Section C — Work, Education & Contact (RBI Form B Compliant) */}
+                <div className="border border-[#F8BBD0] rounded-xs relative">
+                  <button type="button" onClick={() => toggleSection("work")}
+                    className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
+                    <span>Section C — Work, Education & Contact</span>
+                    <span>{expandedSections.work ? "▲" : "▼"}</span>
+                  </button>
+                  {expandedSections.work && (
+                    <div className="p-4 grid grid-cols-2 gap-4 bg-white rounded-b-xs">
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Occupation / Profession</label>
+                        <input type="text" name="occupation" value={formData.occupation} onChange={handleInputChange} placeholder="e.g. Sari-sari owner, Teacher" className={inputClass} />
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Company / Workplace</label>
+                        <input type="text" name="company" value={formData.company} onChange={handleInputChange} placeholder="Complete with area/address" className={inputClass} />
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Highest Educational Attainment</label>
+                        <select name="educationalAttainment" value={formData.educationalAttainment} onChange={handleInputChange} className={selectClass}>
+                          <option value="None">None</option>
+                          <option value="Elementary">Elementary</option>
+                          <option value="High School">High School</option>
+                          <option value="College">College</option>
+                          <option value="Post Grad">Post Grad</option>
+                          <option value="Vocational">Vocational</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Educational Status</label>
+                        <select name="educationStatus" value={formData.educationStatus} onChange={handleInputChange} className={selectClass}>
+                          <option value="Graduate">Graduate</option>
+                          <option value="Under Graduate">Under Graduate</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Contact Number</label>
+                        <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleInputChange} placeholder="e.g. 09171234567" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>E-mail Address</label>
+                        <input type="email" name="emailAddress" value={formData.emailAddress} onChange={handleInputChange} placeholder="e.g. resident@email.com" className={inputClass} />
+                      </div>
+
+                      <div className="col-span-2 border-t border-[#F8BBD0]/40 pt-3 mt-1">
+                        <p className="text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-2">Emergency Contact</p>
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Emergency Contact Name</label>
+                        <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleInputChange} className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Relationship</label>
+                        <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleInputChange} placeholder="e.g. Spouse, Parent" className={inputClass} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className={labelClass}>Emergency Contact Number</label>
+                        <input type="text" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleInputChange} className={inputClass} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section D — Resident Statuses */}
+                <div className="border border-[#F8BBD0] rounded-xs relative">
+                  <button type="button" onClick={() => toggleSection("statuses")}
+                    className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
+                    <span>Section D — Resident Statuses</span>
+                    <span>{expandedSections.statuses ? "▲" : "▼"}</span>
+                  </button>
+                  {expandedSections.statuses && (
+                    <div className="p-4 bg-white rounded-b-xs">
+                      <p className="text-xs text-slate-500 mb-3">Toggle applicable status tags for this resident:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {STATUS_TYPES.map(type => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => toggleStatus(type)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-xs border transition-all cursor-pointer ${
+                              formData.selectedStatuses.includes(type)
+                                ? "bg-[#E8198A] text-white border-[#E8198A] shadow-xs"
+                                : "bg-white text-slate-600 border-[#F8BBD0] hover:border-[#E8198A] hover:text-[#E8198A]"
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                      {formData.selectedStatuses.includes("Other") && (
+                        <div className="mt-4 pt-3 border-t border-[#F8BBD0]/40">
+                          <label className={labelClass}>Specify Other Status Details</label>
+                          <input
+                            type="text"
+                            name="otherStatusNotes"
+                            value={formData.otherStatusNotes}
+                            onChange={handleInputChange}
+                            placeholder="e.g. Requires regular check-up"
+                            className={inputClass}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Section E — Registry Status */}
+                <div className="border border-[#F8BBD0] rounded-xs relative">
+                  <button type="button" onClick={() => toggleSection("registry")}
+                    className="w-full flex justify-between items-center bg-[#FCE4EC] px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#E8198A] cursor-pointer hover:bg-[#f8bbd0]/50 transition-colors rounded-t-xs">
+                    <span>Section E — Registry Status</span>
+                    <span>{expandedSections.registry ? "▲" : "▼"}</span>
+                  </button>
+                  {expandedSections.registry && (
+                    <div className="p-4 bg-white rounded-b-xs">
+                      <div className="flex flex-col max-w-xs">
+                        <label className={labelClass}>Residency Status</label>
+                        <select name="residencyStatus" value={formData.residencyStatus} onChange={handleInputChange} className={`${selectClass} font-semibold`}>
+                          <option value="Active">Active Record</option>
+                          <option value="Inactive">Inactive Record</option>
+                          <option value="Moved">Moved Outside Barangay</option>
+                          <option value="Deceased">Deceased</option>
+                        </select>
+                      </div>
+                      {formData.residencyStatus === "Deceased" && (
+                        <div className="mt-3 bg-[#9B3D30]/10 border border-[#9B3D30]/30 text-[#9B3D30] text-xs font-semibold px-4 py-2.5 rounded-xs flex items-center space-x-2">
+                          <span>⚠️</span>
+                          <span>This action requires supervisor confirmation.</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Form Actions — Sticky bottom */}
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6 sticky bottom-0 bg-white pb-2">
+              {/* Fixed Footer Actions — Permanent Docked Bottom (No Overlapping / Hovering) */}
+              <div className="bg-[#FFF5F8] border-t border-[#F8BBD0] px-6 py-4 flex justify-end space-x-3 flex-shrink-0 z-20">
                 <button
                   type="button"
                   onClick={() => setShowNewProfilingModal(false)}
@@ -983,7 +1109,7 @@ export default function ResidentsView({
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-colors"
                 >
                   Save to Registry
                 </button>

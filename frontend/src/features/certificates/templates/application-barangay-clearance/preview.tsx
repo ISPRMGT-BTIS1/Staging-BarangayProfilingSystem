@@ -13,6 +13,8 @@ export interface ApplicationBarangayClearanceData {
   purpose: string
   /** Name of parent/s if the applicant is a minor; empty string if not */
   parentName?: string
+  /** Language template: 'en' | 'tl' */
+  language?: "en" | "tl"
 }
 
 interface Props {
@@ -21,76 +23,51 @@ interface Props {
   printRef?: React.Ref<HTMLDivElement>
 }
 
-/**
- * ApplicationBarangayClearancePreview
- *
- * Renders the "APPLICATION FOR BARANGAY CLEARANCE/CERTIFICATION SLIP" form
- * pre-filled with the provided data.
- *
- * Designed to be used with:
- *   - `window.print()` — the component renders itself in a print-friendly way
- *   - `react-to-print` — pass `printRef` to the wrapping div
- *
- * Print behaviour is controlled by the <style> block inside the component so
- * it works even without a global print stylesheet.
- */
 export const ApplicationBarangayClearancePreview = React.forwardRef<
   HTMLDivElement,
   Props
 >(({ data }, ref) => {
-  return (
-    <>
-      {/* ── Scoped print styles ─────────────────────────────────────────── */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden !important; }
-          #abc-print-root,
-          #abc-print-root * { visibility: visible !important; }
-          #abc-print-root {
-            position: fixed !important;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            margin: 0; padding: 0;
-          }
-        }
-      `}</style>
+  const isTagalog = data.language === "tl";
 
-      {/* ── Certificate document ─────────────────────────────────────────── */}
-      <div
-        id="abc-print-root"
-        ref={ref}
-        style={{
-          fontFamily: '"Arial Black", Arial, sans-serif',
-          background: '#ffffff',
-          padding: '48px 52px',
-          width: '576px',           /* ~6 in at 96 dpi — half-page portrait */
-          minHeight: '720px',
-          border: '2px solid #000',
-          boxSizing: 'border-box',
-          margin: '0 auto',
-          color: '#000',
-        }}
-      >
+  return (
+    <div
+      id="abc-print-root"
+      ref={ref}
+      className="w-full max-w-[195mm] min-h-[220mm] bg-white text-black p-8 mx-auto relative font-sans print:shadow-none print:p-6 print:m-0"
+      style={{
+        boxSizing: 'border-box',
+        border: '2px solid #000',
+      }}
+    >
         {/* ── Title ─────────────────────────────────────────────────────── */}
         <h1
           style={{
             textAlign: 'center',
             fontFamily: '"Arial Black", Arial, sans-serif',
             fontWeight: 900,
-            fontSize: '20px',
+            fontSize: '18px',
             lineHeight: 1.25,
             textDecoration: 'underline',
             textTransform: 'uppercase',
-            marginBottom: '36px',
+            marginBottom: '24px',
             letterSpacing: '0.02em',
           }}
         >
-          Application for Barangay<br />
-          Clearance/Certification Slip
+          {isTagalog ? (
+            <>
+              APLIKASYON SA BARANGAY<br />
+              CLEARANCE / SLIP NG SERTIPIKASYON
+            </>
+          ) : (
+            <>
+              Application for Barangay<br />
+              Clearance/Certification Slip
+            </>
+          )}
         </h1>
 
         {/* ── Fields ────────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* NAME */}
           <FieldRow label="NAME" value={data.name} grow />
 
@@ -115,7 +92,7 @@ export const ApplicationBarangayClearancePreview = React.forwardRef<
             style={{
               fontFamily: '"Arial Black", Arial, sans-serif',
               fontWeight: 900,
-              fontSize: '15px',
+              fontSize: '14px',
               letterSpacing: '0.01em',
             }}
           >
@@ -142,11 +119,10 @@ export const ApplicationBarangayClearancePreview = React.forwardRef<
         <div
           style={{
             borderTop: '2px solid #000',
-            marginTop: '60px',
+            marginTop: '36px',
           }}
         />
       </div>
-    </>
   )
 })
 

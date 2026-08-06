@@ -4,6 +4,7 @@ import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import SearchableSelect from "./SearchableSelect";
 import { supabase } from "../utils/supabaseClient";
+import { parseSafeInt } from "../utils/helpers";
 
 export default function HouseholdsView({
   searchQuery,
@@ -40,7 +41,6 @@ export default function HouseholdsView({
   // Form states
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
-    barangayId: "",
     streetId: "",
     houseNo: "",
     unitNo: "",
@@ -79,28 +79,19 @@ export default function HouseholdsView({
     setExpandedId(expandedId === id ? null : id);
   };
 
-  // Cascading dropdown filters for form
-  const formStreets = formData.barangayId
-    ? streets.filter((s) => s.barangayId === formData.barangayId)
-    : [];
-
-  const handleBarangayChange = (e) => {
-    setFormData({
-      ...formData,
-      barangayId: e.target.value,
-      streetId: ""
-    });
-  };
+  // All streets available (single-barangay system)
+  const formStreets = streets;
 
   // Filter household records
   const filteredHouseholds = householdsList.filter((household) => {
     const addressStr = getHouseholdAddress(household.householdId);
     const barangayName = getHouseholdBarangay(household.householdId);
 
-    const matchesSearch = searchQuery
-      ? addressStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        household.householdId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        household.addressId.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = (searchQuery || "").toLowerCase();
+    const matchesSearch = q
+      ? String(addressStr || "").toLowerCase().includes(q) ||
+        String(household.householdId || "").toLowerCase().includes(q) ||
+        String(household.addressId || "").toLowerCase().includes(q)
       : true;
 
     const matchesBarangay = barangayFilter === "all" ? true : barangayName === barangayFilter;
@@ -111,8 +102,8 @@ export default function HouseholdsView({
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.barangayId || !formData.streetId || !formData.houseNo) {
-      alert("Please select Barangay, Street, and enter House Number.");
+    if (!formData.streetId || !formData.houseNo) {
+      alert("Please select a Street and enter a House Number.");
       return;
     }
 
@@ -121,7 +112,7 @@ export default function HouseholdsView({
       const { data: addressData, error: addressError } = await supabase
         .from('addresses')
         .insert([{
-          street_id: parseInt(String(formData.streetId).replace(/\D/g, ''), 10),
+          street_id: parseSafeInt(formData.streetId),
           house_no: formData.houseNo,
           unit_no: formData.unitNo || null
         }])
@@ -144,7 +135,7 @@ export default function HouseholdsView({
         .from('households')
         .insert([{
           address_id: newAddressId,
-          household_head_id: formData.householdHeadId ? parseInt(String(formData.householdHeadId).replace(/\D/g, ''), 10) : null,
+          household_head_id: parseSafeInt(formData.householdHeadId),
           household_type: formData.householdType || 'House',
           household_contact_no: formData.householdContactNo || null
         }])
@@ -168,7 +159,6 @@ export default function HouseholdsView({
       
       // Reset Form
       setFormData({
-        barangayId: "",
         streetId: "",
         houseNo: "",
         unitNo: "",
@@ -241,10 +231,9 @@ export default function HouseholdsView({
     }
   };
 
-  const inputClass =
-    "border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]";
+  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
   const selectClass = `${inputClass} cursor-pointer`;
-  const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
+  const labelClass = "text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1";
 
   // ── Edit Household handlers ──────────────────────────────────────────────
   const openEditHH = (e, hh) => {
@@ -406,12 +395,12 @@ export default function HouseholdsView({
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Household & Address Registry</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#E8198A]">Household & Address Registry</h1>
           <p className="text-sm text-slate-500 font-sans">Barangay residential records indexing grouped families and registered co-habitants</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-[#16324A] hover:bg-[#1f4260] text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
+          className="bg-[#E8198A] hover:bg-[#c41273] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
         >
           <span>+</span>
           <span>New Household</span>
@@ -421,19 +410,6 @@ export default function HouseholdsView({
       {/* Filters Control Row */}
       <section className="bg-white border border-[#D1D7CE] p-4 rounded-xs flex flex-wrap gap-4 items-center justify-between shadow-2xs">
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Barangay Filter */}
-          <div className="flex flex-col">
-            <label className="text-[10px] uppercase font-mono font-bold text-slate-400 mb-1">Barangay Sector</label>
-            <select
-              value={barangayFilter}
-              onChange={(e) => setBarangayFilter(e.target.value)}
-              className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
-            >
-              <option value="all">ALL SECTORS</option>
-              <option value="Brgy. 46 Zone 6">BRGY. 46 ZONE 6</option>
-            </select>
-          </div>
-
           {/* Household Type Filter */}
           <div className="flex flex-col">
             <label className="text-[10px] uppercase font-mono font-bold text-slate-400 mb-1">Household Structure</label>
@@ -500,7 +476,7 @@ export default function HouseholdsView({
                         <span>{addressStr}</span>
                       </h3>
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider font-mono mt-0.5">
-                        {barangayName} &bull; Structure: {household.householdType}
+                        Structure: {household.householdType}
                       </p>
                     </div>
                   </div>
@@ -749,16 +725,16 @@ export default function HouseholdsView({
       {/* New Household Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-lg rounded-xs overflow-hidden shadow-xl flex flex-col">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-lg rounded-xs shadow-xl flex flex-col relative z-50">
             {/* Modal Header */}
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>📋</span>
                 <span>New Household Registration</span>
               </h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
@@ -852,7 +828,7 @@ export default function HouseholdsView({
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4 mt-6">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -862,7 +838,7 @@ export default function HouseholdsView({
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
                 >
                   Create Registry
                 </button>
@@ -875,27 +851,27 @@ export default function HouseholdsView({
       {/* Add Family Modal */}
       {showAddFamilyModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs shadow-xl flex flex-col relative z-50">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center rounded-t-xs">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>👨‍👩‍👧‍👦</span>
                 <span>Add New Family Unit</span>
               </h3>
               <button
                 onClick={() => setShowAddFamilyModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
             </div>
 
             <form onSubmit={handleFamilyFormSubmit} className="p-6 space-y-4 font-sans">
-              <div className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs p-3 text-xs text-slate-600">
-                <p className="font-mono font-bold text-[#16324A] mb-1">Household: {addFamilyHouseholdId}</p>
+              <div className="bg-[#FCE4EC] border border-[#F8BBD0] rounded-xs p-3 text-xs text-slate-600">
+                <p className="font-mono font-bold text-[#E8198A] mb-1">Household: {addFamilyHouseholdId}</p>
                 <p>A new family unit will be created under this household. You can assign residents to this family when registering or editing them.</p>
               </div>
 
-              <div className="flex flex-col">
+              <div className="flex flex-col relative z-[60]">
                 <label className={labelClass}>Family Head (Optional)</label>
                 <SearchableSelect
                   name="familyHeadId"
@@ -922,7 +898,7 @@ export default function HouseholdsView({
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddFamilyModal(false)}
@@ -932,7 +908,7 @@ export default function HouseholdsView({
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
                 >
                   Create Family
                 </button>
@@ -945,13 +921,13 @@ export default function HouseholdsView({
       {/* Edit Household Modal */}
       {showEditHHModal && editHH && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs shadow-xl flex flex-col relative z-50">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center rounded-t-xs">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>🏡</span>
                 <span>Edit Household {editHH.householdId}</span>
               </h3>
-              <button onClick={() => setShowEditHHModal(false)} className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+              <button onClick={() => setShowEditHHModal(false)} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
             </div>
             <form onSubmit={handleEditHH} className="p-6 space-y-4 font-sans">
               <div className="grid grid-cols-2 gap-4">
@@ -980,7 +956,7 @@ export default function HouseholdsView({
                   />
                 </div>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col relative z-[60]">
                 <label className={labelClass}>Household Head (Resident)</label>
                 <SearchableSelect
                   name="householdHeadId"
@@ -990,12 +966,12 @@ export default function HouseholdsView({
                   placeholder="Select Household Head..."
                 />
               </div>
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-4">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4 mt-4">
                 <button type="button" onClick={() => setShowEditHHModal(false)}
                   className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
                 >Cancel</button>
                 <button type="submit" disabled={editHHSaving}
-                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
                 >{editHHSaving ? "Saving…" : "Save Changes"}</button>
               </div>
             </form>
@@ -1006,16 +982,16 @@ export default function HouseholdsView({
       {/* Edit Family Modal */}
       {showEditFamilyModal && editFamily && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs shadow-xl flex flex-col relative z-50">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center rounded-t-xs">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>✏️</span>
                 <span>Edit Family {editFamily.familyId}</span>
               </h3>
-              <button onClick={() => setShowEditFamilyModal(false)} className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+              <button onClick={() => setShowEditFamilyModal(false)} className="text-white/80 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
             </div>
             <form onSubmit={handleEditFamily} className="p-6 space-y-4 font-sans">
-              <div className="flex flex-col">
+              <div className="flex flex-col relative z-[60]">
                 <label className={labelClass}>Family Head (Resident)</label>
                 <SearchableSelect
                   name="familyHeadId"
@@ -1040,12 +1016,12 @@ export default function HouseholdsView({
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4">
                 <button type="button" onClick={() => setShowEditFamilyModal(false)}
                   className="border border-slate-300 text-slate-500 hover:text-slate-800 text-xs font-semibold px-4 py-2 uppercase tracking-wider rounded-xs cursor-pointer hover:bg-slate-50 transition-colors"
                 >Cancel</button>
                 <button type="submit" disabled={editFamilySaving}
-                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
                 >{editFamilySaving ? "Saving…" : "Save Changes"}</button>
               </div>
             </form>

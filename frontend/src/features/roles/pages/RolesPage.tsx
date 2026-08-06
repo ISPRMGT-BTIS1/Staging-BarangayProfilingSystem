@@ -55,7 +55,7 @@ function RoleCard({ roleId }: { roleId: RoleId }) {
   const meta = ROLE_META[roleId]
   const perms = ROLE_PERMISSIONS[roleId]
 
-  const bgClass  = meta.color === 'pink'  ? 'bg-[#8A244E]'       : meta.color === 'teal' ? 'bg-teal-600'   : 'bg-slate-600'
+  const bgClass  = meta.color === 'pink'  ? 'bg-[#D86B98]'       : meta.color === 'teal' ? 'bg-teal-600'   : 'bg-slate-600'
   const tagClass = meta.color === 'pink'  ? 'bg-white/20 text-white' : meta.color === 'teal' ? 'bg-white/20 text-white' : 'bg-white/20 text-white'
 
   return (
@@ -89,7 +89,7 @@ export default function RolesPage() {
     <div className="flex-1 p-6 overflow-y-auto space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold font-serif text-[#8A244E]">Roles &amp; Permissions</h1>
+        <h1 className="text-3xl font-bold font-serif text-[#D86B98]">Roles &amp; Permissions</h1>
         <p className="text-sm text-slate-500 font-sans mt-1">
           Barangay staff roles and their system access privileges
         </p>
@@ -104,18 +104,18 @@ export default function RolesPage() {
 
       {/* Permissions Matrix */}
       <section>
-        <h2 className="text-lg font-bold font-serif text-[#8A244E] mb-4">Permissions Matrix</h2>
-        <div className="bg-white rounded-2xl shadow overflow-hidden border border-[#E4C7D5]">
+        <h2 className="text-lg font-bold font-serif text-[#D86B98] mb-4">Permissions Matrix</h2>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#F4C2D7]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[640px]">
               <thead>
-                <tr className="bg-[#F7EEF2] border-b-2 border-[#E4C7D5]">
-                  <th className="px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#8A244E] w-56">
+                <tr className="bg-[#FDF0F5] border-b-2 border-[#F4C2D7]">
+                  <th className="px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#D86B98] w-56">
                     Permission
                   </th>
                   {ORDERED_ROLES.map(roleId => {
                     const meta = ROLE_META[roleId]
-                    const bgDot = meta.color === 'pink' ? 'bg-[#8A244E]' : meta.color === 'teal' ? 'bg-teal-500' : 'bg-slate-400'
+                    const bgDot = meta.color === 'pink' ? 'bg-[#D86B98]' : meta.color === 'teal' ? 'bg-teal-500' : 'bg-slate-400'
                     return (
                       <th key={roleId} className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -137,13 +137,13 @@ export default function RolesPage() {
                     return (
                       <tr
                         key={item.perm}
-                        className={`border-b border-[#E4C7D5]/60 ${
-                          gi % 2 === 0 ? 'bg-white' : 'bg-[#FCF7F9]'
-                        } hover:bg-[#F7EEF2]/50 transition-colors`}
+                        className={`border-b border-[#F8BBD9]/60 ${
+                          gi % 2 === 0 ? 'bg-white' : 'bg-[#FFF0F7]'
+                        } hover:bg-[#FCE4EC]/50 transition-colors`}
                       >
                         <td className="px-5 py-2.5">
                           {isFirstInGroup && (
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-[#8A244E]/60 mb-0.5">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-[#E8198A]/60 mb-0.5">
                               {group}
                             </div>
                           )}
@@ -182,7 +182,7 @@ export default function RolesPage() {
           Access denied
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-[#8A244E]" /> Captain / Secretary — Full Access
+          <span className="w-3 h-3 rounded-full bg-[#E8198A]" /> Captain / Secretary — Full Access
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-teal-500" /> Kagawad — Partial Access

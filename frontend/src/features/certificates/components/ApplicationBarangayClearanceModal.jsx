@@ -58,11 +58,15 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // ── language state: 'en' | 'tl' ────────────────────────────────────────
+  const [language, setLanguage] = useState("en");
+
   // reset on open
   useEffect(() => {
     if (isOpen) {
       setResidentSearch("");
       setSelectedResident(null);
+      setLanguage("en");
       setName("");
       setAddress("");
       setAge("");
@@ -101,7 +105,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
       }).slice(0, 8);
 
   // ── preview data object ──────────────────────────────────────────────
-  const previewData = { name, address, age, gender, purpose, parentName };
+  const previewData = { name, address, age, gender, purpose, parentName, language };
 
   // ── print handler ────────────────────────────────────────────────────
   const handlePrint = () => {
@@ -110,7 +114,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
       residentName: name || null,
       residentId: selectedResident?.residentId || null,
       purpose: purpose || null,
-      issuedBy: currentUser?.userId || null,
+      issuedBy: currentUser?.full_name || currentUser?.fullName || currentUser?.username || (currentUser?.userId ? String(currentUser.userId) : null),
     });
     window.print();
   };
@@ -119,16 +123,17 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
 
   // ─────────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(22, 50, 74, 0.55)", backdropFilter: "blur(2px)" }}
-    >
-      <div
-        className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col"
-        style={{ width: "980px", maxWidth: "96vw", maxHeight: "92vh", overflow: "hidden" }}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#16324a8c] backdrop-blur-[2px] print:absolute print:inset-0 print:bg-white print:block">
+      <style>
+        {`@media print { 
+          @page { margin: 0; } 
+          body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+        }`}
+      </style>
+
+      <div className="bg-white rounded-xs shadow-2xl border border-[#D1D7CE] flex flex-col w-[980px] max-w-[96vw] max-h-[92vh] overflow-hidden print:w-full print:max-w-none print:h-auto print:max-h-none print:overflow-visible print:border-none print:shadow-none">
         {/* ── Header ────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D1D7CE] bg-[#F9FAF8] flex-shrink-0 print:hidden">
           <div>
             <h2 className="text-base font-serif font-bold text-[#16324A]">
               Application for Barangay Clearance / Certification Slip
@@ -176,16 +181,47 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
         </div>
 
         {/* ── Body ──────────────────────────────────────────────────────── */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden print:overflow-visible">
 
           {/* ── Left: Data Entry Form ────────────────────────────────── */}
           <div
-            className={`flex flex-col border-r border-[#D1D7CE] overflow-y-auto ${
+            className={`flex flex-col border-r border-[#D1D7CE] overflow-y-auto print:hidden ${
               stage === "preview" ? "hidden md:flex" : "flex"
             }`}
             style={{ width: "400px", minWidth: "340px" }}
           >
             <div className="p-6 space-y-5 flex-1">
+
+              {/* Language Selector */}
+              <div>
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-[#E8198A] font-bold mb-1.5">
+                  Certificate Language / Template
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "en"
+                        ? "bg-[#16324A] text-white border-[#16324A] shadow-xs"
+                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#F2F4F1]"
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("tl")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "tl"
+                        ? "bg-[#E8198A] text-white border-[#E8198A] shadow-xs font-bold"
+                        : "bg-white text-slate-600 border-[#F8BBD0] hover:bg-[#FCE4EC]"
+                    }`}
+                  >
+                    <span>🇵🇭 Tagalog</span>
+                  </button>
+                </div>
+              </div>
 
               {/* Resident picker */}
               <div>
@@ -275,11 +311,11 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
                 <FormField label="Age" required>
                   <input
                     type="number"
-                    min={0}
-                    max={120}
+                    min="0"
+                    max="150"
                     className={inputCls}
                     value={age}
-                    onChange={(e) => setAge(e.target.value)}
+                    onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="e.g. 25"
                   />
                 </FormField>
@@ -322,7 +358,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
             </div>
 
             {/* ── Form action bar ──────────────────────────────────── */}
-            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t border-[#D1D7CE] bg-[#F9FAF8] flex items-center justify-between gap-3 flex-shrink-0 print:hidden">
               <button
                 onClick={onClose}
                 className="text-xs font-mono uppercase tracking-wider px-4 py-2 border border-[#D1D7CE] text-slate-500 rounded-xs hover:bg-[#F2F4F1] cursor-pointer transition-all"
@@ -355,11 +391,11 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
 
           {/* ── Right: Live Preview ──────────────────────────────────── */}
           <div
-            className={`flex-1 overflow-y-auto bg-[#E8EBE5] flex flex-col items-center py-8 ${
+            className={`flex-1 overflow-y-auto bg-[#E8EBE5] flex flex-col items-center py-8 print:p-0 print:bg-white print:block print:overflow-visible ${
               stage === "form" ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3 print:hidden">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
                 Print Preview
               </span>
@@ -377,7 +413,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
               </button>
             </div>
 
-            <div className="shadow-2xl">
+            <div className="shadow-2xl origin-top scale-[0.65] mb-[-35%] print:scale-100 print:mb-0 print:shadow-none print:flex print:justify-center print:w-full">
               <ApplicationBarangayClearancePreview
                 ref={printRef}
                 data={previewData}
@@ -385,7 +421,7 @@ export default function ApplicationBarangayClearanceModal({ isOpen, onClose }) {
             </div>
 
             {(!name || !address || !age || !gender || !purpose) && (
-              <p className="mt-4 text-[11px] text-slate-500 font-mono italic">
+              <p className="mt-4 text-[11px] text-slate-500 font-mono italic print:hidden">
                 Fill in the required fields to enable printing.
               </p>
             )}

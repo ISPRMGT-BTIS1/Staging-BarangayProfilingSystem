@@ -24,37 +24,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7EEF2] flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md">
-        {/* Main Card */}
-        <div className="bg-[#8A244E] rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="px-8 pt-8 pb-6 text-center">
-            <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
-              <svg className="h-8 w-8 text-white fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 18h16" />
-                <path d="M4 10h16" />
-                <path d="M5 10v8" />
-                <path d="M12 10v8" />
-                <path d="M19 10v8" />
-                <path d="M3 6h18" />
-                <path d="m12 2-9 4h18Z" />
+    <div className="min-h-screen bg-[#FAF4F7] flex items-center justify-center p-4">
+      <div className="relative w-full max-w-sm">
+        {/* Login Card */}
+        <div className="bg-[#D86B98] rounded-2xl shadow-xl overflow-hidden border border-[#F4C2D7]">
+          {/* Header with Avatar Icon */}
+          <div className="px-8 pt-10 pb-6 text-center">
+            {/* Avatar circle */}
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-[#F4C2D7]/40 mb-5">
+              <svg className="h-14 w-14 fill-[#FFFFFF]/90" viewBox="0 0 24 24">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-white tracking-wide font-serif">
               Barangay 46 Zone 6
             </h1>
-            <p className="text-sm text-white/80 font-sans mt-0.5">Pasay City, Metro Manila</p>
-            <p className="text-xs text-white/60 font-mono uppercase tracking-widest mt-1">
+            <p className="text-sm text-white/90 font-sans mt-0.5">Pasay City, Metro Manila</p>
+            <p className="text-xs text-white/75 font-mono uppercase tracking-widest mt-1">
               Profiling System
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white p-8 space-y-5">
+          <form onSubmit={handleSubmit} className="px-8 pb-6 space-y-4">
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center space-x-2">
+              <div className="bg-white/20 border border-white/30 text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center space-x-2">
                 <svg className="h-4 w-4 stroke-current fill-none flex-shrink-0" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="15" y1="9" x2="9" y2="15" />
@@ -66,7 +61,7 @@ export default function LoginPage() {
 
             {/* Username */}
             <div className="flex flex-col">
-              <label className="text-[11px] uppercase font-bold text-white/80 mb-1.5 tracking-widest">
+              <label className="text-[11px] uppercase font-bold text-white/90 mb-1.5 tracking-widest">
                 Username
               </label>
               <input
@@ -76,13 +71,13 @@ export default function LoginPage() {
                 required
                 autoFocus
                 placeholder="Enter your username"
-                className="border-0 bg-white text-gray-700 rounded-lg text-base px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/60 transition-all font-sans placeholder-gray-400"
+                className="border-0 bg-white text-gray-700 rounded-lg text-base px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/80 transition-all font-sans placeholder-gray-400"
               />
             </div>
 
             {/* Password */}
             <div className="flex flex-col">
-              <label className="text-[11px] uppercase font-bold text-white/80 mb-1.5 tracking-widest">
+              <label className="text-[11px] uppercase font-bold text-white/90 mb-1.5 tracking-widest">
                 Password
               </label>
               <input
@@ -91,7 +86,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Enter your password"
-                className="border-0 bg-white text-gray-700 rounded-lg text-base px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/60 transition-all font-sans placeholder-gray-400"
+                className="border-0 bg-white text-gray-700 rounded-lg text-base px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/80 transition-all font-sans placeholder-gray-400"
               />
             </div>
 
@@ -99,7 +94,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#2D5F2E] hover:bg-[#1B4020] disabled:bg-[#2D5F2E]/60 text-white text-base font-bold uppercase tracking-wider py-3.5 rounded-lg cursor-pointer transition-colors shadow-md hover:shadow-lg mt-2"
+              className="w-full bg-[#386A45] hover:bg-[#264A2F] disabled:bg-[#386A45]/60 text-white text-base font-bold uppercase tracking-wider py-3.5 rounded-lg cursor-pointer transition-colors shadow-md hover:shadow-lg mt-2"
             >
               {isLoading ? (
                 <span className="inline-flex items-center justify-center space-x-2">
@@ -112,8 +107,8 @@ export default function LoginPage() {
           </form>
 
           {/* Footer */}
-          <div className="bg-[#D1A5BB]/40 px-8 py-3 text-center">
-            <p className="text-[10px] text-white/70 font-mono uppercase tracking-wider">
+          <div className="bg-[#C45480]/30 px-8 py-3 text-center">
+            <p className="text-[10px] text-white/80 font-mono uppercase tracking-wider">
               Authorized Personnel Only — Barangay Profiling System
             </p>
           </div>

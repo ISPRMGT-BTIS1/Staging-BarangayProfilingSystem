@@ -29,6 +29,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
     selectedResidentIds: [],
   });
 
+  const [customCommittee, setCustomCommittee] = useState("");
   const [residentSearch, setResidentSearch] = useState("");
   const [createdEvent, setCreatedEvent] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -37,6 +38,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
     if (isOpen) {
       setStage("form");
       setCreatedEvent(null);
+      setCustomCommittee("");
       setFormData({
         title: "",
         committee: "Committee on Health",
@@ -78,7 +80,8 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
 
   const handleCreateAndPreview = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.committee || !formData.eventDate || !formData.eventTime || !formData.venue) {
+    const finalCommittee = formData.committee === "Others" ? (customCommittee.trim() || "Others") : formData.committee;
+    if (!formData.title || !finalCommittee || !formData.eventDate || !formData.eventTime || !formData.venue) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -86,7 +89,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
     setSaving(true);
     const newEventObj = {
       title: formData.title,
-      committee: formData.committee,
+      committee: finalCommittee,
       event_date: formData.eventDate,
       event_time: formData.eventTime,
       venue: formData.venue,
@@ -238,9 +241,26 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
                     <option value="Committee on Education">Committee on Education</option>
                     <option value="Committee on Livelihood & Commerce">Committee on Livelihood &amp; Commerce</option>
                     <option value="Committee on Peace & Order">Committee on Peace &amp; Order</option>
+                    <option value="Committee on Infrastructure">Committee on Infrastructure</option>
                     <option value="Sangguniang Kabataan (SK)">Sangguniang Kabataan (SK)</option>
                     <option value="Executive Office">Executive Office</option>
+                    <option value="Others">Others (Specify)</option>
                   </select>
+                  {formData.committee === "Others" && (
+                    <div className="mt-2">
+                      <label className="text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1 block">
+                        Specify Committee Name <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Committee on Women & Family"
+                        value={customCommittee}
+                        onChange={(e) => setCustomCommittee(e.target.value)}
+                        className="w-full border border-[#D1D7CE] bg-white focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col">
@@ -357,7 +377,7 @@ export default function EventAttendanceModal({ isOpen, onClose }) {
             </form>
           ) : (
             /* Printable Preview */
-            <div className="w-[210mm] min-h-[297mm] mx-auto bg-white text-black p-8 relative print-root font-serif">
+            <div id="event-attendance-print-root" className="w-[210mm] mx-auto bg-white text-black p-8 relative print-root font-serif">
               {/* Header */}
               <div className="flex justify-between items-center border-b-2 border-black pb-4 mb-6">
                 <div className="w-20 h-20 flex-shrink-0">

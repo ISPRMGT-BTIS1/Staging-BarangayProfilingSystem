@@ -64,8 +64,8 @@ export function AppRouter() {
   return (
     <React.Suspense
       fallback={
-        <div className="min-h-screen bg-[#F7EEF2] flex items-center justify-center">
-          <span className="text-sm text-[#8A244E] font-mono animate-pulse">Loading…</span>
+        <div className="min-h-screen bg-[#FCE4EC] flex items-center justify-center">
+          <span className="text-sm text-[#E8198A] font-mono animate-pulse">Loading…</span>
         </div>
       }
     >

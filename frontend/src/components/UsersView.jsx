@@ -3,6 +3,7 @@ import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import { supabase } from "../utils/supabaseClient";
+import { parseSafeInt } from "../utils/helpers";
 
 export default function UsersView() {
   const { currentUser } = useAuth();
@@ -59,8 +60,8 @@ export default function UsersView() {
           full_name: formData.fullName,
           username: formData.username,
           password_hash: formData.password,
-          role_id: parseInt(formData.roleId),
-          barangay_id: parseInt(String(formData.barangayId).replace(/\D/g, ''), 10) || null,
+          role_id: parseSafeInt(formData.roleId) || 3,
+          barangay_id: parseSafeInt(formData.barangayId),
           is_active: formData.isActive
         }])
         .select('user_id')
@@ -137,21 +138,21 @@ export default function UsersView() {
     return brgy ? brgy.name : "System-wide";
   };
 
-  const inputClass = "border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]";
+  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
   const selectClass = `${inputClass} cursor-pointer`;
-  const labelClass = "text-[10px] uppercase font-mono font-bold text-slate-500 mb-1";
+  const labelClass = "text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1";
 
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#16324A]">User Management</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#E8198A]">User Management</h1>
           <p className="text-sm text-slate-500 font-sans">Admin console for configuring personnel roles, access privileges, and credentials</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-[#16324A] hover:bg-[#1f4260] text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
+          className="bg-[#E8198A] hover:bg-[#c41273] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
         >
           <span>+</span>
           <span>Add User</span>
@@ -204,7 +205,7 @@ export default function UsersView() {
                       className={`border text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer ${
                         user.isActive
                           ? "border-[#9B3D30] text-[#9B3D30] hover:bg-[#9B3D30] hover:text-white"
-                          : "border-[#2E5A44] text-[#2E5A44] hover:bg-[#2E5A44] hover:text-white"
+                          : "border-[#E8198A] text-[#E8198A] hover:bg-[#E8198A] hover:text-white"
                       }`}
                     >
                       {user.isActive ? "Deactivate" : "Activate"}
@@ -222,16 +223,16 @@ export default function UsersView() {
       {/* Add User Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-md rounded-xs overflow-hidden shadow-xl flex flex-col">
             {/* Modal Header */}
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>👤</span>
                 <span>Register New User Profile</span>
               </h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
@@ -329,7 +330,7 @@ export default function UsersView() {
                   id="isActive"
                   checked={formData.isActive}
                   onChange={handleInputChange}
-                  className="accent-[#2E5A44]"
+                  className="accent-[#E8198A]"
                 />
                 <label htmlFor="isActive" className="text-xs font-semibold text-[#16324A] cursor-pointer">
                   Account is active on registration
@@ -337,7 +338,7 @@ export default function UsersView() {
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4 mt-6">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -348,7 +349,7 @@ export default function UsersView() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Register User"}
                 </button>

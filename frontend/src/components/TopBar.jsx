@@ -7,11 +7,11 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling, ac
   const isResidentsActive = activeTab === "residents" || activeTab === "residentDetail";
 
   return (
-    <header className="h-16 border-b-2 border-[#8A244E] bg-white flex items-center justify-between px-6 sticky top-0 z-40">
+    <header className="h-16 border-b-2 border-[#E8198A] bg-white flex items-center justify-between px-6 sticky top-0 z-40">
       {/* App Name / Branding */}
       <div className="flex items-center space-x-3">
-        <span className="text-xl font-bold tracking-tight font-serif flex items-center space-x-2 text-[#8A244E]">
-          <svg className="h-5 w-5 stroke-current fill-none text-[#8A244E]" viewBox="0 0 24 24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <span className="text-xl font-bold tracking-tight font-serif flex items-center space-x-2 text-[#E8198A]">
+          <svg className="h-5 w-5 stroke-current fill-none text-[#E8198A]" viewBox="0 0 24 24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 18h16" />
             <path d="M4 10h16" />
             <path d="M5 10v8" />
@@ -22,7 +22,7 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling, ac
           </svg>
           <span>Brgy. 46 Zone 6</span>
         </span>
-        <span className="hidden sm:inline-block text-xs uppercase px-2 py-0.5 border border-[#E4C7D5] bg-[#F7EEF2] font-mono rounded text-[#8A244E] tracking-wider">
+        <span className="hidden sm:inline-block text-xs uppercase px-2 py-0.5 border border-[#F8BBD9] bg-[#FCE4EC] font-mono rounded text-[#E8198A] tracking-wider">
           Pasay City
         </span>
       </div>
@@ -30,14 +30,14 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling, ac
       {/* Search Input */}
       <div className="flex-1 max-w-md mx-8 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg className="h-4 w-4 text-[#8A244E]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="h-4 w-4 text-[#E8198A]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
         <input
           type="text"
           placeholder="Search resident name, address, or ID..."
-          className="w-full pl-9 pr-4 py-2 bg-[#F7EEF2] border border-[#E4C7D5] rounded-lg text-sm focus:outline-none focus:border-[#8A244E] focus:bg-white text-[#1A1A2E] font-sans placeholder-[#8A244E]/40 transition-colors"
+          className="w-full pl-9 pr-4 py-2 bg-[#FCE4EC] border border-[#F8BBD9] rounded-lg text-sm focus:outline-none focus:border-[#E8198A] focus:bg-white text-[#1A1A2E] font-sans placeholder-[#E8198A]/40 transition-colors"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -47,7 +47,7 @@ export default function TopBar({ searchQuery, setSearchQuery, onNewProfiling, ac
       <div className="flex items-center space-x-4">
         {currentUser && (
           <div className="hidden md:flex flex-col text-right">
-            <span className="text-xs font-bold text-[#8A244E]">{currentUser.fullName}</span>
+            <span className="text-xs font-bold text-[#E8198A]">{currentUser.fullName}</span>
             <span className="text-[9px] text-[#2D5F2E] font-mono font-bold uppercase tracking-wider bg-[#2D5F2E]/10 border border-[#2D5F2E]/20 px-1.5 py-0.5 rounded-sm">
               {getUserBarangay()}
             </span>

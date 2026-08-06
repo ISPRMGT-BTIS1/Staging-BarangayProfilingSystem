@@ -27,9 +27,9 @@ export function useResidents(search?: string) {
       const q = search.toLowerCase()
       return list.filter(
         (r) =>
-          r.firstName.toLowerCase().includes(q) ||
-          r.lastName.toLowerCase().includes(q) ||
-          r.residentId.toLowerCase().includes(q),
+          String(r.firstName || '').toLowerCase().includes(q) ||
+          String(r.lastName || '').toLowerCase().includes(q) ||
+          String(r.residentId || '').toLowerCase().includes(q),
       )
     },
   })

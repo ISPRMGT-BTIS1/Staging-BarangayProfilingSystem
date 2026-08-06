@@ -28,14 +28,23 @@ function ordinalSuffix(day) {
   return "th";
 }
 
-/** Turns an ISO date string (YYYY-MM-DD) into e.g. "22nd day of July 2026." */
-function formatIssuedDate(isoDate) {
+const TAGALOG_MONTHS = [
+  "Enero", "Pebrero", "Marso", "Abril", "Mayo", "Hunyo",
+  "Hulyo", "Agosto", "Setyembre", "Oktubre", "Nobyembre", "Disyembre"
+];
+
+/** Turns an ISO date string (YYYY-MM-DD) into e.g. "22nd day of July 2026." or "ika-22 ng Hulyo 2026." */
+function formatIssuedDate(isoDate, lang = "en") {
   if (!isoDate) return "";
   const d = new Date(`${isoDate}T00:00:00`);
   if (Number.isNaN(d.getTime())) return "";
   const day = d.getDate();
-  const month = d.toLocaleString("en-US", { month: "long" });
   const year = d.getFullYear();
+  if (lang === "tl") {
+    const month = TAGALOG_MONTHS[d.getMonth()];
+    return `ika-${day} ng ${month} ${year}.`;
+  }
+  const month = d.toLocaleString("en-US", { month: "long" });
   return `${day}${ordinalSuffix(day)} day of ${month} ${year}.`;
 }
 
@@ -53,6 +62,9 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
   const [selectedResident, setSelectedResident] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+
+  // ── language state: 'en' | 'tl' ────────────────────────────────────────
+  const [language, setLanguage] = useState("en");
 
   // ── overrideable fields ────────────────────────────────────────────────
   const [fullName, setFullName] = useState("");
@@ -82,6 +94,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
     if (isOpen) {
       setResidentSearch("");
       setSelectedResident(null);
+      setLanguage("en");
       setFullName("");
       setAgeStatus("");
       setNationality("");
@@ -105,9 +118,13 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
         ? selectedResident.age
         : calculateAge(selectedResident.birthDate);
     if (age !== null && age !== undefined) {
-      setAgeStatus(age < 18 ? "minor" : "legal of age");
+      if (language === "tl") {
+        setAgeStatus(age < 18 ? "wala pa sa hustong edad (minor)" : "sapat ang edad");
+      } else {
+        setAgeStatus(age < 18 ? "minor" : "legal of age");
+      }
     }
-  }, [selectedResident]);
+  }, [selectedResident, language]);
 
   // ── resident dropdown options ────────────────────────────────────────
   const filteredResidents =
@@ -123,7 +140,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
           .slice(0, 8);
 
   // ── derived preview data ─────────────────────────────────────────────
-  const issuedDate = formatIssuedDate(issuedDateRaw);
+  const issuedDate = formatIssuedDate(issuedDateRaw, language);
   const previewData = {
     fullName,
     ageStatus,
@@ -132,6 +149,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
     purpose,
     issuedDate,
     punongBarangay,
+    language,
   };
 
   const canPrint = !!(fullName && address && purpose);
@@ -143,7 +161,7 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
       residentName: fullName || null,
       residentId: selectedResident?.residentId || null,
       purpose: purpose || null,
-      issuedBy: currentUser?.userId || null,
+      issuedBy: currentUser?.full_name || currentUser?.fullName || currentUser?.username || (currentUser?.userId ? String(currentUser.userId) : null),
     });
     window.print();
   };
@@ -223,6 +241,37 @@ export default function CertificationOfIndigencyModal({ isOpen, onClose }) {
             style={{ width: "400px", minWidth: "340px" }}
           >
             <div className="p-6 space-y-5 flex-1">
+
+              {/* Language Selector */}
+              <div>
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-[#E8198A] font-bold mb-1.5">
+                  Certificate Language / Template
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "en"
+                        ? "bg-[#16324A] text-white border-[#16324A] shadow-xs"
+                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#F2F4F1]"
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("tl")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "tl"
+                        ? "bg-[#E8198A] text-white border-[#E8198A] shadow-xs font-bold"
+                        : "bg-white text-slate-600 border-[#F8BBD0] hover:bg-[#FCE4EC]"
+                    }`}
+                  >
+                    <span>🇵🇭 Tagalog</span>
+                  </button>
+                </div>
+              </div>
 
               {/* Resident picker */}
               <div>

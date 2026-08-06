@@ -52,6 +52,9 @@ export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
+  // ── language state: 'en' | 'tl' ────────────────────────────────────────
+  const [language, setLanguage] = useState("en");
+
   // ── overrideable fields (match GuardianCertificateData) ────────────────
   const [guardianName, setGuardianName] = useState("");
   const [address, setAddress] = useState("");
@@ -79,6 +82,7 @@ export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
     if (isOpen) {
       setResidentSearch("");
       setSelectedResident(null);
+      setLanguage("en");
       setGuardianName("");
       setAddress("");
       setStudentName("");
@@ -115,6 +119,7 @@ export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
     age,
     purpose,
     issuedDate,
+    language,
   };
 
   const isComplete =
@@ -127,7 +132,7 @@ export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
       residentName: guardianName || null,
       residentId: selectedResident?.residentId || null,
       purpose: purpose || null,
-      issuedBy: currentUser?.userId || null,
+      issuedBy: currentUser?.full_name || currentUser?.fullName || currentUser?.username || (currentUser?.userId ? String(currentUser.userId) : null),
     });
     window.print();
   };
@@ -207,6 +212,37 @@ export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
             style={{ width: "400px", minWidth: "340px" }}
           >
             <div className="p-6 space-y-5 flex-1">
+
+              {/* Language Selector */}
+              <div>
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-[#E8198A] font-bold mb-1.5">
+                  Certificate Language / Template
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "en"
+                        ? "bg-[#16324A] text-white border-[#16324A] shadow-xs"
+                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#F2F4F1]"
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("tl")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "tl"
+                        ? "bg-[#E8198A] text-white border-[#E8198A] shadow-xs font-bold"
+                        : "bg-white text-slate-600 border-[#F8BBD0] hover:bg-[#FCE4EC]"
+                    }`}
+                  >
+                    <span>🇵🇭 Tagalog</span>
+                  </button>
+                </div>
+              </div>
 
               {/* Guardian resident picker */}
               <div>
@@ -307,11 +343,11 @@ export default function CertificationOfGuardianshipModal({ isOpen, onClose }) {
                 <FormField label="Age of Student" required>
                   <input
                     type="number"
-                    min={0}
-                    max={120}
+                    min="0"
+                    max="150"
                     className={inputCls}
                     value={age}
-                    onChange={(e) => setAge(e.target.value)}
+                    onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="e.g. 12"
                   />
                 </FormField>

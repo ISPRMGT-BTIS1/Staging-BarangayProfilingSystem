@@ -26,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 function NavIcon({ id, active }: { id: string; active: boolean }) {
-  const stroke = active ? 'text-[#8A244E]' : 'text-white/60 group-hover:text-white'
+  const stroke = active ? 'text-[#D86B98]' : 'text-white/70 group-hover:text-white'
   const cls = `h-5 w-5 fill-none stroke-current ${stroke}`
 
   switch (id) {
@@ -149,7 +149,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-[#8A244E] text-white flex flex-col justify-between border-r border-[#6A1838] select-none h-[calc(100vh-4rem)] sticky top-16 z-30">
+    <aside className="w-64 bg-[#D86B98] text-white flex flex-col justify-between border-r border-[#C45480] select-none h-[calc(100vh-4rem)] sticky top-16 z-30 shadow-md">
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {visibleItems.map((item) => {
           const isActive =
@@ -161,8 +161,8 @@ export function Sidebar() {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center space-x-3 px-4 py-3 group text-sm font-semibold tracking-wide uppercase text-left rounded-xl transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-white text-[#8A244E] shadow-sm'
-                  : 'text-white/80 hover:text-white hover:bg-white/15'
+                  ? 'bg-white text-[#D86B98] shadow-sm'
+                  : 'text-white/90 hover:text-white hover:bg-white/15'
               }`}
             >
               <span className="flex-shrink-0">
@@ -175,7 +175,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer — user profile + sign out */}
-      <div className="border-t border-[#6A1838]/60 p-4 bg-[#6A1838]/30 space-y-3">
+      <div className="border-t border-[#C4157A]/60 p-4 bg-[#C4157A]/30 space-y-3">
         <div className="flex items-center space-x-3 bg-white/10 p-2.5 rounded-xl border border-white/20">
           <div className="h-9 w-9 rounded-full bg-[#2D5F2E] flex items-center justify-center font-bold text-white text-sm shadow-inner flex-shrink-0">
             {getInitials(currentUser?.fullName)}

@@ -43,7 +43,7 @@ function AuthenticatedApp() {
   }, [loading, residents]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-[#8A244E] bg-[#F7EEF2] text-lg font-semibold font-sans">Loading data from Supabase...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-[#E8198A] bg-[#FCE4EC] text-lg font-semibold font-sans">Loading data from Supabase...</div>;
   }
 
   const handleNewProfiling = () => {
@@ -191,7 +191,7 @@ function AuthenticatedApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7EEF2] flex flex-col font-sans text-[#1A1A2E]">
+    <div className="min-h-screen bg-[#FCE4EC] flex flex-col font-sans text-[#1A1A2E]">
       {/* Top Bar matching wireframe */}
       <TopBar
         searchQuery={searchQuery}
@@ -206,7 +206,7 @@ function AuthenticatedApp() {
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
         {/* Main Content Pane */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#F7EEF2]">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#FCE4EC]">
           {renderActiveView()}
         </main>
       </div>

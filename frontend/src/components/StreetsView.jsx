@@ -3,6 +3,7 @@ import { useData } from "../context/DataContext";
 import { useAuth } from "@/shared/hooks/useAuth";
 import { logAudit } from "../utils/auditLogger";
 import { supabase } from "../utils/supabaseClient";
+import { parseSafeInt } from "../utils/helpers";
 
 export default function StreetsView() {
   const { currentUser } = useAuth();
@@ -15,7 +16,6 @@ export default function StreetsView() {
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newStreetName, setNewStreetName] = useState("");
-  const [newBarangayId, setNewBarangayId] = useState("");
 
   // Edit state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -26,8 +26,10 @@ export default function StreetsView() {
 
   const handleAddStreet = async (e) => {
     e.preventDefault();
-    if (!newStreetName || !newBarangayId) {
-      alert("Please fill in all fields.");
+    // Auto-resolve to the single barangay in the system
+    const resolvedBarangayId = barangays[0]?.id || 1;
+    if (!newStreetName) {
+      alert("Please enter a street name.");
       return;
     }
 
@@ -35,7 +37,7 @@ export default function StreetsView() {
       const { data, error } = await supabase
         .from('streets')
         .insert([{
-          barangay_id: parseInt(String(newBarangayId).replace(/\D/g, ''), 10),
+          barangay_id: resolvedBarangayId,
           street_name: newStreetName
         }])
         .select('street_id')
@@ -51,12 +53,11 @@ export default function StreetsView() {
         newStreetId,
         "CREATE",
         currentUser?.userId || null,
-        `Created street: ${newStreetName} under Barangay ${newBarangayId}`
+        `Created street: ${newStreetName} under Barangay ${resolvedBarangayId}`
       );
 
       setShowAddModal(false);
       setNewStreetName("");
-      setNewBarangayId("");
       alert(`Successfully added street "${newStreetName}"!`);
       
       if (refetch) refetch();
@@ -103,8 +104,8 @@ export default function StreetsView() {
 
   const handleEditStreet = async (e) => {
     e.preventDefault();
-    if (!editStreetName || !editBarangayId) {
-      alert("Please fill in all fields.");
+    if (!editStreetName) {
+      alert("Please enter a street name.");
       return;
     }
     setEditSaving(true);
@@ -113,7 +114,7 @@ export default function StreetsView() {
         .from('streets')
         .update({
           street_name: editStreetName,
-          barangay_id: parseInt(String(editBarangayId).replace(/\D/g, ''), 10)
+          barangay_id: editStreet.barangayId || barangays[0]?.id || 1
         })
         .eq('street_id', editStreet.streetId);
 
@@ -145,17 +146,21 @@ export default function StreetsView() {
     return street.barangayId === barangayFilter;
   });
 
+  const inputClass = "border border-[#F8BBD0] bg-[#FFF5F8] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#E8198A] focus:ring-1 focus:ring-[#E8198A] transition-all";
+  const selectClass = `${inputClass} cursor-pointer`;
+  const labelClass = "text-[10px] uppercase font-mono font-bold text-[#E8198A] mb-1";
+
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Streets Management</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#E8198A]">Streets Management</h1>
           <p className="text-sm text-slate-500 font-sans">Admin control console for managing barangay sector streets and routing rules</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-[#16324A] hover:bg-[#1f4260] text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
+          className="bg-[#E8198A] hover:bg-[#c41273] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
         >
           <span>+</span>
           <span>Add Street</span>
@@ -164,20 +169,6 @@ export default function StreetsView() {
 
       {/* Filters Control Row */}
       <section className="bg-white border border-[#D1D7CE] p-4 rounded-xs flex flex-wrap gap-4 items-center justify-between shadow-2xs">
-        <div className="flex flex-col">
-          <label className="text-[10px] uppercase font-mono font-bold text-slate-400 mb-1">Filter by Barangay</label>
-          <select
-            value={barangayFilter}
-            onChange={(e) => setBarangayFilter(e.target.value)}
-            className="bg-[#F2F4F1] border border-[#D1D7CE] rounded-xs text-xs px-2.5 py-1.5 focus:outline-none focus:border-[#16324A] text-[#16324A] font-semibold cursor-pointer"
-          >
-            <option value="all">ALL BARANGAYS</option>
-            {barangays.map(b => (
-              <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>
-            ))}
-          </select>
-        </div>
-
         <div className="text-xs font-mono font-semibold text-slate-500">
           Showing <span className="text-[#16324A] font-bold">{filteredStreets.length}</span> of {streetsList.length} total streets
         </div>
@@ -190,7 +181,6 @@ export default function StreetsView() {
             <tr>
               <th className="w-24">Street ID</th>
               <th>Street Name</th>
-              <th>Barangay Jurisdiction</th>
               <th className="text-right">Actions</th>
             </tr>
           </thead>
@@ -206,13 +196,10 @@ export default function StreetsView() {
                     <td className="font-bold text-[#16324A] text-sm">
                       {street.streetName}
                     </td>
-                    <td className="text-xs font-semibold text-slate-600">
-                      {brgy ? brgy.name : "Unknown"}
-                    </td>
                     <td className="text-right space-x-2">
                       <button
                         onClick={() => openEditModal(street)}
-                        className="border border-[#16324A] text-[#16324A] hover:bg-[#16324A] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer mr-1"
+                        className="border border-[#E8198A] text-[#E8198A] hover:bg-[#E8198A] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer mr-1"
                       >
                         Edit
                       </button>
@@ -228,7 +215,7 @@ export default function StreetsView() {
               })
             ) : (
               <tr>
-                <td colSpan="4" className="text-center py-8 text-slate-400 font-serif italic bg-white">
+                <td colSpan="3" className="text-center py-8 text-slate-400 font-serif italic bg-white">
                   No streets registered.
                 </td>
               </tr>
@@ -240,16 +227,16 @@ export default function StreetsView() {
       {/* Add Street Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
             {/* Modal Header */}
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>🛣️</span>
                 <span>Add New Street</span>
               </h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
@@ -258,21 +245,19 @@ export default function StreetsView() {
             {/* Modal Form */}
             <form onSubmit={handleAddStreet} className="p-6 space-y-4 font-sans">
               <div className="flex flex-col">
-                <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Street Name</label>
+                <label className={labelClass}>Street Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Mabini St."
                   value={newStreetName}
                   onChange={(e) => setNewStreetName(e.target.value)}
-                  className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                  className={inputClass}
                 />
               </div>
 
-
-
               {/* Form Actions */}
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4 mt-6">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -282,7 +267,7 @@ export default function StreetsView() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#2E5A44] hover:bg-[#234533] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors"
                 >
                   Add Street
                 </button>
@@ -295,15 +280,15 @@ export default function StreetsView() {
       {/* Edit Street Modal */}
       {showEditModal && editStreet && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-sm rounded-xs overflow-hidden shadow-xl flex flex-col">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>✏️</span>
                 <span>Edit Street</span>
               </h3>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
@@ -311,32 +296,17 @@ export default function StreetsView() {
 
             <form onSubmit={handleEditStreet} className="p-6 space-y-4 font-sans">
               <div className="flex flex-col">
-                <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Street Name</label>
+                <label className={labelClass}>Street Name</label>
                 <input
                   type="text"
                   required
                   value={editStreetName}
                   onChange={(e) => setEditStreetName(e.target.value)}
-                  className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                  className={inputClass}
                 />
               </div>
 
-              <div className="flex flex-col">
-                <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">Barangay Jurisdiction</label>
-                <select
-                  value={editBarangayId}
-                  onChange={(e) => setEditBarangayId(e.target.value)}
-                  required
-                  className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
-                >
-                  <option value="">Select Barangay...</option>
-                  {barangays.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4 mt-6">
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4 mt-6">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
@@ -347,7 +317,7 @@ export default function StreetsView() {
                 <button
                   type="submit"
                   disabled={editSaving}
-                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
                 >
                   {editSaving ? "Saving…" : "Save Changes"}
                 </button>

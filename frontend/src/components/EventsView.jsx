@@ -39,6 +39,7 @@ export default function EventsView() {
     selectedResidentIds: [], // List of resident IDs interested/participating
   });
 
+  const [customCommittee, setCustomCommittee] = useState("");
   const [residentSearch, setResidentSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -104,7 +105,8 @@ export default function EventsView() {
   // Handle Event Creation
   const handleCreateEvent = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.committee || !formData.eventDate || !formData.eventTime || !formData.venue) {
+    const finalCommittee = formData.committee === "Others" ? (customCommittee.trim() || "Others") : formData.committee;
+    if (!formData.title || !finalCommittee || !formData.eventDate || !formData.eventTime || !formData.venue) {
       alert("Please fill in all required event fields (Title, Committee, Date, Time, Venue).");
       return;
     }
@@ -112,7 +114,7 @@ export default function EventsView() {
     setSaving(true);
     const newEventObj = {
       title: formData.title,
-      committee: formData.committee,
+      committee: finalCommittee,
       event_date: formData.eventDate,
       event_time: formData.eventTime,
       venue: formData.venue,
@@ -147,10 +149,11 @@ export default function EventsView() {
         createdRecord.id,
         "CREATE",
         currentUser?.userId || null,
-        `Created event: ${formData.title} (${formData.committee})`
+        `Created event: ${formData.title} (${finalCommittee})`
       );
 
       setShowCreateModal(false);
+      setCustomCommittee("");
       fetchEvents();
 
       // Reset Form
@@ -216,19 +219,23 @@ export default function EventsView() {
     );
   });
 
+  const inputClass = "border border-[#F4C2D7] bg-[#FDF4F8] focus:bg-white text-[#2D3748] rounded-md text-xs px-3 py-2 focus:outline-none focus:border-[#D86B98] focus:ring-1 focus:ring-[#D86B98] transition-all";
+  const selectClass = `${inputClass} cursor-pointer`;
+  const labelClass = "text-[10px] uppercase font-mono font-bold text-[#D86B98] mb-1";
+
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
       {/* View Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Barangay Events &amp; Attendance</h1>
+          <h1 className="text-3xl font-bold font-serif text-[#D86B98]">Barangay Events &amp; Attendance</h1>
           <p className="text-sm text-slate-500 font-sans">
             Schedule community programs, register interested residents, and print official attendance sheets
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-[#16324A] hover:bg-[#1f4260] text-white px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xs cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
+          className="bg-[#D86B98] hover:bg-[#C45480] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer shadow-sm hover:shadow transition-all inline-flex items-center space-x-2 border border-transparent"
         >
           <span>📅</span>
           <span>+ Create Event</span>
@@ -238,13 +245,13 @@ export default function EventsView() {
       {/* Control Bar & Search */}
       <section className="bg-white border border-[#D1D7CE] p-4 rounded-xs flex flex-wrap gap-4 items-center justify-between shadow-2xs">
         <div className="flex items-center space-x-3 flex-1 max-w-md">
-          <label className="text-[10px] uppercase font-mono font-bold text-slate-400">Search Events</label>
+          <label className="text-[10px] uppercase font-mono font-bold text-[#E8198A]">Search Events</label>
           <input
             type="text"
             placeholder="Search by title, committee, venue…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-1.5 focus:outline-none focus:border-[#16324A] flex-1"
+            className={inputClass + " flex-1"}
           />
         </div>
         <div className="text-xs font-mono font-semibold text-slate-500">
@@ -293,39 +300,35 @@ export default function EventsView() {
                         )}
                       </td>
                       <td className="text-xs font-semibold text-slate-600 font-serif">
-                        <span className="bg-[#16324A]/5 border border-[#16324A]/15 px-2 py-0.5 rounded-xs text-[#16324A]">
+                        <span className="bg-[#E8198A]/10 border border-[#E8198A]/30 px-2 py-0.5 rounded-xs text-[#E8198A] font-bold">
                           {ev.committee}
                         </span>
                       </td>
                       <td className="text-xs font-mono text-slate-600">
-                        <div className="font-bold">{ev.event_date || ev.eventDate}</div>
-                        <div className="text-[10px] text-slate-400">{ev.event_time || ev.eventTime}</div>
+                        {ev.eventDate} &bull; {ev.eventTime}
                       </td>
-                      <td className="text-xs text-slate-600">{ev.venue}</td>
-                      <td className="text-xs text-slate-500 max-w-[200px]">
-                        <span className="block truncate" title={ev.goal}>
-                          {ev.goal || "—"}
-                        </span>
+                      <td className="text-xs text-slate-600 font-sans">{ev.venue}</td>
+                      <td className="text-xs text-slate-500 font-sans max-w-xs truncate">
+                        {ev.goal || "N/A"}
                       </td>
                       <td className="text-center">
-                        <span className="inline-block bg-[#2E5A44]/10 text-[#2E5A44] border border-[#2E5A44]/30 px-2 py-0.5 rounded-sm font-mono text-xs font-bold">
-                          {participantCount} Interested
+                        <span className="bg-[#E8198A] text-white px-2 py-0.5 rounded-full text-[10px] font-mono font-bold">
+                          {participantCount} residents
                         </span>
                       </td>
-                      <td className="text-right space-x-2 whitespace-nowrap">
+                      <td className="text-right space-x-1">
                         <button
                           onClick={() => {
                             setSelectedEventForPrint(ev);
                             setShowPrintModal(true);
                           }}
-                          className="bg-[#16324A] hover:bg-[#1f4260] text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer inline-flex items-center space-x-1"
+                          className="border border-[#E8198A] text-[#E8198A] hover:bg-[#E8198A] hover:text-white text-[10px] px-2 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                         >
-                          <span>🖨️</span>
-                          <span>Print Attendance</span>
+                          Print Sheet
                         </button>
                         <button
                           onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                          className="border border-[#9B3D30] text-[#9B3D30] hover:bg-[#9B3D30] hover:text-white text-[10px] px-2.5 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
+                          className="border border-[#9B3D30] text-[#9B3D30] hover:bg-[#9B3D30] hover:text-white text-[10px] px-2 py-1 uppercase font-semibold rounded-xs transition-colors cursor-pointer"
                         >
                           Delete
                         </button>
@@ -342,16 +345,16 @@ export default function EventsView() {
       {/* ── CREATE EVENT MODAL ──────────────────────────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#16324A]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white border-2 border-[#16324A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
+          <div className="bg-white border-2 border-[#E8198A] w-full max-w-3xl rounded-xs overflow-hidden shadow-xl flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="bg-[#16324A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
+            <div className="bg-[#E8198A] text-white px-6 py-4 flex justify-between items-center flex-shrink-0">
               <h3 className="font-serif font-bold text-lg flex items-center space-x-2">
                 <span>🗓️</span>
                 <span>Create New Barangay Event</span>
               </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-300 hover:text-white text-xl font-bold cursor-pointer"
+                className="text-white/80 hover:text-white text-xl font-bold cursor-pointer"
               >
                 &times;
               </button>
@@ -362,7 +365,7 @@ export default function EventsView() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Title */}
                 <div className="col-span-2 flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Event Title <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -372,13 +375,13 @@ export default function EventsView() {
                     placeholder="e.g. Barangay Health & Medical Mission 2026"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className={inputClass}
                   />
                 </div>
 
                 {/* Committee */}
                 <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Committee <span className="text-red-600">*</span>
                   </label>
                   <select
@@ -386,7 +389,7 @@ export default function EventsView() {
                     required
                     value={formData.committee}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A] cursor-pointer"
+                    className={selectClass}
                   >
                     <option value="Committee on Health">Committee on Health</option>
                     <option value="Committee on Youth & Sports">Committee on Youth &amp; Sports</option>
@@ -394,15 +397,31 @@ export default function EventsView() {
                     <option value="Committee on Education">Committee on Education</option>
                     <option value="Committee on Livelihood & Commerce">Committee on Livelihood &amp; Commerce</option>
                     <option value="Committee on Peace & Order">Committee on Peace &amp; Order</option>
-                    <option value="Committee on Infrastructure & Cleanliness">Committee on Infrastructure</option>
+                    <option value="Committee on Infrastructure">Committee on Infrastructure</option>
                     <option value="Sangguniang Kabataan (SK)">Sangguniang Kabataan (SK)</option>
                     <option value="Executive Office">Executive Office</option>
+                    <option value="Others">Others (Specify)</option>
                   </select>
+                  {formData.committee === "Others" && (
+                    <div className="mt-2">
+                      <label className={labelClass}>
+                        Specify Committee Name <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Committee on Women & Family"
+                        value={customCommittee}
+                        onChange={(e) => setCustomCommittee(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Date */}
                 <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Date <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -411,13 +430,13 @@ export default function EventsView() {
                     required
                     value={formData.eventDate}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className={inputClass}
                   />
                 </div>
 
                 {/* Time */}
                 <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Time <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -427,13 +446,13 @@ export default function EventsView() {
                     placeholder="e.g. 08:00 AM - 12:00 PM"
                     value={formData.eventTime}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className={inputClass}
                   />
                 </div>
 
                 {/* Venue */}
                 <div className="flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Venue <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -443,13 +462,13 @@ export default function EventsView() {
                     placeholder="e.g. Barangay 46 Covered Court"
                     value={formData.venue}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className={inputClass}
                   />
                 </div>
 
                 {/* Goal */}
                 <div className="col-span-2 flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Goal / Objective
                   </label>
                   <input
@@ -458,13 +477,13 @@ export default function EventsView() {
                     placeholder="e.g. Provide free medical check-up, eye exam, and vitamins to 150 residents"
                     value={formData.goal}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className={inputClass}
                   />
                 </div>
 
                 {/* Description */}
                 <div className="col-span-2 flex flex-col">
-                  <label className="text-[10px] uppercase font-mono font-bold text-slate-500 mb-1">
+                  <label className={labelClass}>
                     Description &amp; Guidelines
                   </label>
                   <textarea
@@ -473,16 +492,16 @@ export default function EventsView() {
                     placeholder="Provide additional context or requirements for participants…"
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="border border-[#D1D7CE] bg-[#F2F4F1] focus:bg-white text-[#16324A] rounded-xs text-xs px-3 py-2 focus:outline-none focus:border-[#16324A]"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               {/* Resident Participants Selector */}
-              <div className="border border-[#D1D7CE] rounded-xs p-4 bg-[#F9FAF8] space-y-3">
+              <div className="border border-[#F8BBD0] rounded-xs p-4 bg-[#FFF5F8] space-y-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h4 className="text-xs font-serif font-bold text-[#16324A] uppercase tracking-wider flex items-center space-x-1.5">
+                    <h4 className="text-xs font-serif font-bold text-[#E8198A] uppercase tracking-wider flex items-center space-x-1.5">
                       <span>👥</span>
                       <span>Registered / Interested Participants List ({formData.selectedResidentIds.length} Selected)</span>
                     </h4>
@@ -494,7 +513,7 @@ export default function EventsView() {
                     <button
                       type="button"
                       onClick={selectAllFilteredResidents}
-                      className="text-[10px] font-mono text-[#16324A] hover:underline font-bold"
+                      className="text-[10px] font-mono text-[#E8198A] hover:underline font-bold"
                     >
                       Select All Filtered
                     </button>
@@ -515,11 +534,11 @@ export default function EventsView() {
                   placeholder="Filter residents by name or ID to select…"
                   value={residentSearch}
                   onChange={(e) => setResidentSearch(e.target.value)}
-                  className="w-full border border-[#D1D7CE] bg-white text-[#16324A] rounded-xs text-xs px-3 py-1.5 focus:outline-none focus:border-[#16324A]"
+                  className={inputClass + " w-full"}
                 />
 
                 {/* Resident Selection Checklist */}
-                <div className="max-h-48 overflow-y-auto border border-[#D1D7CE] bg-white rounded-xs divide-y divide-[#D1D7CE]/40">
+                <div className="max-h-48 overflow-y-auto border border-[#F8BBD0] bg-white rounded-xs divide-y divide-[#F8BBD0]/40">
                   {filteredResidentsForSelection.length === 0 ? (
                     <div className="p-3 text-center text-xs text-slate-400 italic">No matching residents found</div>
                   ) : (
@@ -528,8 +547,8 @@ export default function EventsView() {
                       return (
                         <label
                           key={r.residentId}
-                          className={`flex items-center justify-between p-2 text-xs hover:bg-[#F2F4F1] cursor-pointer transition-colors ${
-                            isChecked ? "bg-[#2E5A44]/5 font-semibold" : ""
+                          className={`flex items-center justify-between p-2 text-xs hover:bg-[#FCE4EC]/50 cursor-pointer transition-colors ${
+                            isChecked ? "bg-[#FCE4EC] font-semibold" : ""
                           }`}
                         >
                           <div className="flex items-center space-x-2.5">
@@ -537,7 +556,7 @@ export default function EventsView() {
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => toggleResidentSelection(r.residentId)}
-                              className="accent-[#2E5A44]"
+                              className="accent-[#E8198A]"
                             />
                             <span className="text-[#16324A]">{getFullName(r)}</span>
                           </div>
@@ -553,8 +572,8 @@ export default function EventsView() {
                 </div>
               </div>
 
-              {/* Form Actions */}
-              <div className="flex justify-end space-x-3 border-t border-[#D1D7CE]/40 pt-4">
+              {/* Modal Actions */}
+              <div className="flex justify-end space-x-3 border-t border-[#F8BBD0]/40 pt-4 mt-6">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -565,9 +584,9 @@ export default function EventsView() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="bg-[#16324A] hover:bg-[#1f4260] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50 inline-flex items-center space-x-1.5"
+                  className="bg-[#E8198A] hover:bg-[#c41273] text-white text-xs font-semibold px-5 py-2 uppercase tracking-wider rounded-xs cursor-pointer transition-colors disabled:opacity-50"
                 >
-                  <span>{saving ? "Saving…" : "Save Event & Print Attendance"}</span>
+                  {saving ? "Creating Event…" : "Create & Save Event"}
                 </button>
               </div>
             </form>

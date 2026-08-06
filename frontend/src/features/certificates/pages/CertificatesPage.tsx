@@ -40,12 +40,32 @@ interface CertRecord {
 
 export default function CertificatesPage() {
   const [records, setRecords] = useState<CertRecord[]>([])
+  const [userMap, setUserMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState('ALL')
   const [search, setSearch] = useState('')
 
   const fetchRecords = async () => {
     setLoading(true)
+
+    // Fetch users table to map user IDs (e.g. 1, 9) to user names
+    try {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('user_id, full_name, username')
+
+      if (usersData) {
+        const map: Record<string, string> = {}
+        usersData.forEach((u: any) => {
+          const name = u.full_name || u.username || `User #${u.user_id}`
+          map[String(u.user_id)] = name
+        })
+        setUserMap(map)
+      }
+    } catch (err) {
+      console.warn('Could not load users map:', err)
+    }
+
     const { data, error } = await supabase
       .from('certificate_requests')
       .select('*')
@@ -64,13 +84,25 @@ export default function CertificatesPage() {
     fetchRecords()
   }, [])
 
+  const formatIssuedBy = (issuedBy: string | null) => {
+    if (!issuedBy) return null;
+    if (userMap[issuedBy]) return userMap[issuedBy];
+    const numId = Number(issuedBy);
+    if (!isNaN(numId) && userMap[String(numId)]) {
+      return userMap[String(numId)];
+    }
+    return issuedBy;
+  }
+
   const filtered = records.filter(r => {
     const matchType = filterType === 'ALL' || r.certificate_type === filterType
     const q = search.toLowerCase()
+    const issuedByText = formatIssuedBy(r.issued_by) || ''
     const matchSearch = !q
-      || (r.resident_name || '').toLowerCase().includes(q)
-      || (r.resident_id || '').toLowerCase().includes(q)
-      || (r.purpose || '').toLowerCase().includes(q)
+      || String(r.resident_name || '').toLowerCase().includes(q)
+      || String(r.resident_id || '').toLowerCase().includes(q)
+      || String(r.purpose || '').toLowerCase().includes(q)
+      || String(issuedByText || '').toLowerCase().includes(q)
     return matchType && matchSearch
   })
 
@@ -83,10 +115,12 @@ export default function CertificatesPage() {
   }
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold font-serif text-[#16324A]">Certificates</h1>
+    <div className="flex-1 p-6 overflow-y-auto space-y-6 print:p-0 print:m-0 print:overflow-visible">
+      {/* Background Page Content — hidden when printing certificates */}
+      <div className="space-y-6 print:hidden">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-3xl font-bold font-serif text-[#16324A]">Certificates</h1>
         <p className="text-sm text-slate-500 font-sans mt-1">
           Request, fill, and print barangay certificate documents
         </p>
@@ -211,7 +245,7 @@ export default function CertificatesPage() {
                       </span>
                     </td>
                     <td className="font-mono text-xs text-slate-500">
-                      {rec.issued_by || <span className="text-slate-300 italic">—</span>}
+                      {formatIssuedBy(rec.issued_by) || <span className="text-slate-300 italic">—</span>}
                     </td>
                     <td className="font-mono text-xs text-slate-500 whitespace-nowrap">
                       {formatDate(rec.issued_at)}
@@ -227,6 +261,7 @@ export default function CertificatesPage() {
             </table>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

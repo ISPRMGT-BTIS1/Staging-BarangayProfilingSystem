@@ -35,11 +35,15 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
+  // ── language state: 'en' | 'tl' ────────────────────────────────────────
+  const [language, setLanguage] = useState("en");
+
   // ── overrideable fields ────────────────────────────────────────────────
   const [salutation, setSalutation] = useState("Mr.");
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [nationality, setNationality] = useState("Filipino");
+  const [purpose, setPurpose] = useState("");
   const [dateIssued, setDateIssued] = useState(todayIso());
 
   // ── stage: 'form' | 'preview' ─────────────────────────────────────────
@@ -61,10 +65,12 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
     if (isOpen) {
       setResidentSearch("");
       setSelectedResident(null);
+      setLanguage("en");
       setSalutation("Mr.");
       setName("");
       setAddress("");
       setNationality("Filipino");
+      setPurpose("");
       setDateIssued(todayIso());
       setStage("form");
     }
@@ -97,6 +103,8 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
     captainName: CAPTAIN_NAME,
     barangayName: BARANGAY_NAME,
     cityName: CITY_NAME,
+    language,
+    purpose,
   };
 
   const canPrint = !!(name && address);
@@ -108,7 +116,7 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
       residentName: name || null,
       residentId: selectedResident?.residentId || null,
       purpose: null,
-      issuedBy: currentUser?.userId || null,
+      issuedBy: currentUser?.full_name || currentUser?.fullName || currentUser?.username || (currentUser?.userId ? String(currentUser.userId) : null),
     });
     window.print();
   };
@@ -187,6 +195,37 @@ export default function CertificationGoodMoralModal({ isOpen, onClose }) {
             style={{ width: "400px", minWidth: "340px" }}
           >
             <div className="p-6 space-y-5 flex-1">
+
+              {/* Language Selector */}
+              <div>
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-[#E8198A] font-bold mb-1.5">
+                  Certificate Language / Template
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("en")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "en"
+                        ? "bg-[#16324A] text-white border-[#16324A] shadow-xs"
+                        : "bg-white text-slate-600 border-[#D1D7CE] hover:bg-[#F2F4F1]"
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("tl")}
+                    className={`px-3 py-2 text-xs font-semibold rounded-xs border transition-all cursor-pointer flex items-center justify-center space-x-1.5 ${
+                      language === "tl"
+                        ? "bg-[#E8198A] text-white border-[#E8198A] shadow-xs font-bold"
+                        : "bg-white text-slate-600 border-[#F8BBD0] hover:bg-[#FCE4EC]"
+                    }`}
+                  >
+                    <span>🇵🇭 Tagalog</span>
+                  </button>
+                </div>
+              </div>
 
               {/* Resident picker */}
               <div>

@@ -1,8 +1,13 @@
 import { forwardRef } from 'react';
+import { PASAY_CITY_LOGO_BASE64, BARANGAY_46_LOGO_BASE64 } from "../../../../assets/embeddedLogos";
 
-// Replace these placeholders with the actual image paths from your GDrive/assets folder
-const CITY_LOGO = "https://via.placeholder.com/150?text=City+Logo";
-const BRGY_LOGO = "https://via.placeholder.com/150?text=Brgy+Logo";
+const CITY_LOGO = PASAY_CITY_LOGO_BASE64;
+const BRGY_LOGO = BARANGAY_46_LOGO_BASE64;
+
+const TAGALOG_MONTHS = [
+  "Enero", "Pebrero", "Marso", "Abril", "Mayo", "Hunyo",
+  "Hulyo", "Agosto", "Setyembre", "Oktubre", "Nobyembre", "Disyembre"
+];
 
 interface PreviewData {
   name: string;
@@ -13,6 +18,7 @@ interface PreviewData {
   residencySince: string; // e.g. "June 2007"
   witnessName?: string;
   witnessPosition?: string;
+  language?: "en" | "tl";
 }
 
 interface PreviewProps {
@@ -49,7 +55,8 @@ const numberToWords = (num: number): string => {
 };
 
 export const CertificationJobseekersPreview = forwardRef<HTMLDivElement, PreviewProps>(({ data }, ref) => {
-  const { name, address, age, gender, residencyYears, residencySince, witnessName, witnessPosition } = data;
+  const { name, address, age, gender, residencyYears, residencySince, witnessName, witnessPosition, language } = data;
+  const isTagalog = language === "tl";
 
   // Format current date
   const date = new Date();
@@ -77,7 +84,8 @@ export const CertificationJobseekersPreview = forwardRef<HTMLDivElement, Preview
   return (
     <div
       ref={ref}
-      className="w-[210mm] min-h-[297mm] bg-white text-black p-16 mx-auto relative font-serif print:shadow-none"
+      id="jobseeker-print-root"
+      className="w-[210mm]  bg-white text-black p-16 mx-auto relative font-serif print:shadow-none"
     >
       {/* ── Header with Logos ─────────────────────────────────────────── */}
       <div className="flex justify-between items-start mb-12">
@@ -86,10 +94,14 @@ export const CertificationJobseekersPreview = forwardRef<HTMLDivElement, Preview
         </div>
 
         <div className="text-center flex-1 px-4 leading-tight mt-2">
-          <p className="text-[15px]">Republic of the Philippines</p>
-          <p className="text-[15px] font-bold mt-1">OFFICE OF THE SANGGUNIANG BARANGAY</p>
+          <p className="text-[15px]">
+            {isTagalog ? "Republika ng Pilipinas" : "Republic of the Philippines"}
+          </p>
+          <p className="text-[15px] font-bold mt-1 uppercase">
+            {isTagalog ? "TANGGAPAN NG SANGGUNIANG BARANGAY" : "OFFICE OF THE SANGGUNIANG BARANGAY"}
+          </p>
           <p className="text-[15px] uppercase">BARANGAY 46, ZONE 06</p>
-          <p className="text-[15px]">Pasay City, Metro Manila</p>
+          <p className="text-[15px]">{isTagalog ? "Lungsod ng Pasay, Kalakhang Maynila" : "Pasay City, Metro Manila"}</p>
         </div>
 
         <div className="w-28 h-28 flex-shrink-0">
@@ -100,46 +112,83 @@ export const CertificationJobseekersPreview = forwardRef<HTMLDivElement, Preview
       {/* ── Document Title ────────────────────────────────────────────── */}
       <div className="text-center mb-10 mt-6">
         <h1
-          className="text-5xl font-bold uppercase tracking-wide"
+          className="text-4xl font-bold uppercase tracking-wide"
           style={{ color: '#4a0000', transform: 'scaleY(1.2)' }}
         >
-          CERTIFICATION
+          {isTagalog ? "SERTIPIKASYON" : "CERTIFICATION"}
         </h1>
+        {isTagalog && (
+          <p className="text-xs italic font-serif text-slate-500 mt-1 tracking-wider">
+            (FIRST TIME JOBSEEKERS ASSISTANCE ACT - RA 11261)
+          </p>
+        )}
       </div>
 
       {/* ── Document Body ─────────────────────────────────────────────── */}
       <div className="text-justify leading-[2.2] space-y-6 text-[16px] px-4">
-        <p className="font-bold mb-4">TO WHOM IT MAY CONCERN:</p>
-
-        <p className="indent-12">
-          This is to certify that{" "}
-          <strong className="uppercase underline decoration-1 underline-offset-4">
-            {getHonorific(gender)} {name || "[NAME]"}
-          </strong>
-          ; <strong>{age || "[AGE]"}</strong> years of age, Filipino, and presently residing at{" "}
-          <strong>{address || "[ADDRESS]"}</strong>, is a bona fide resident of this Barangay for{" "}
-          <strong>
-            {yearsWords || "[YEARS]"} ({residencyYears || "[#]"}) years since{" "}
-            {residencySince || "[MONTH YEAR]"} to date
-          </strong>{" "}
-          and a qualified recipient <strong>of RA 11261</strong> for the{" "}
-          <strong>First Time Jobseekers Act of 2019</strong>.
+        <p className="font-bold mb-4">
+          {isTagalog ? "SA LAHAT NG MAY KINAUUKULAN:" : "TO WHOM IT MAY CONCERN:"}
         </p>
 
-        <p className="indent-12">
-          This further certifies that the holder/bearer was informed of his/her rights including the
-          duties and responsibilities accorded by RA 11261 through the Oath of Undertaking he/she has
-          signed and executed in the presence of our Barangay Officials.
-        </p>
+        {isTagalog ? (
+          <>
+            <p className="indent-12">
+              Ito ay nagpapatunay na si{" "}
+              <strong className="uppercase underline decoration-1 underline-offset-4 font-bold">
+                {name || "[PANGALAN]"}
+              </strong>
+              , <strong>{age || "[EDAD]"}</strong> taong gulang, Pilipino, at kasalukuyang naninirahan sa{" "}
+              <strong>{address || "[TIRAHAN]"}</strong>, ay isang lehitimong residente ng Barangay na ito nang higit sa{" "}
+              <strong>
+                {residencyYears || "[#]"} taon
+              </strong>{" "}
+              at isang kwalipikadong benepisyaryo ng <strong>RA 11261 (First Time Jobseekers Assistance Act of 2019)</strong>.
+            </p>
 
-        <p className="indent-12 mt-8">
-          Issued this{" "}
-          <strong>
-            {day}
-            <sup>{getOrdinalSuffix(day)}</sup>
-          </strong>{" "}
-          day of <strong>{month} {year}</strong>.
-        </p>
+            <p className="indent-12">
+              Pinatutunayan din na ang may hawak ng sertipikasyong ito ay napaalalahanan sa kanyang mga karapatan at tungkulin sa ilalim ng RA 11261 sa pamamagitan ng Panunumpa (Oath of Undertaking) na kanyang nilagdaan sa harap ng Opisyal ng Barangay.
+            </p>
+
+            <p className="indent-12 mt-8">
+              Iginawad ngayong{" "}
+              <strong>
+                ika-{day} ng {TAGALOG_MONTHS[date.getMonth()]} {year}
+              </strong>.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="indent-12">
+              This is to certify that{" "}
+              <strong className="uppercase underline decoration-1 underline-offset-4">
+                {getHonorific(gender)} {name || "[NAME]"}
+              </strong>
+              ; <strong>{age || "[AGE]"}</strong> years of age, Filipino, and presently residing at{" "}
+              <strong>{address || "[ADDRESS]"}</strong>, is a bona fide resident of this Barangay for{" "}
+              <strong>
+                {yearsWords || "[YEARS]"} ({residencyYears || "[#]"}) years since{" "}
+                {residencySince || "[MONTH YEAR]"} to date
+              </strong>{" "}
+              and a qualified recipient <strong>of RA 11261</strong> for the{" "}
+              <strong>First Time Jobseekers Act of 2019</strong>.
+            </p>
+
+            <p className="indent-12">
+              This further certifies that the holder/bearer was informed of his/her rights including the
+              duties and responsibilities accorded by RA 11261 through the Oath of Undertaking he/she has
+              signed and executed in the presence of our Barangay Officials.
+            </p>
+
+            <p className="indent-12 mt-8">
+              Issued this{" "}
+              <strong>
+                {day}
+                <sup>{getOrdinalSuffix(day)}</sup>
+              </strong>{" "}
+              day of <strong>{month} {year}</strong>.
+            </p>
+          </>
+        )}
       </div>
 
       {/* ── Signatures ────────────────────────────────────────────────── */}
@@ -155,7 +204,9 @@ export const CertificationJobseekersPreview = forwardRef<HTMLDivElement, Preview
         {/* Witness */}
         <div className="flex justify-end mt-12">
           <div className="text-center w-72">
-            <p className="text-[15px] italic mb-6">Witnessed by:</p>
+            <p className="text-[15px] italic mb-6">
+              {isTagalog ? "Nasaksihan ni:" : "Witnessed by:"}
+            </p>
             <p className="font-bold uppercase text-[16px]">{witnessName || "Hon. Michael Lauzon"}</p>
             <p className="text-[15px] italic">{witnessPosition || "Barangay Kagawad"}</p>
           </div>
@@ -163,7 +214,9 @@ export const CertificationJobseekersPreview = forwardRef<HTMLDivElement, Preview
 
         {/* Seal note */}
         <div className="mt-8">
-          <p className="text-[13px] italic font-semibold">Not valid without seal</p>
+          <p className="text-[13px] italic font-semibold">
+            {isTagalog ? "Hindi balido kung walang opisyal na selyo." : "Not valid without seal"}
+          </p>
         </div>
       </div>
     </div>

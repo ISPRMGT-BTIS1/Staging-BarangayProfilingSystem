@@ -163,8 +163,14 @@ export default function ResidentDetailView({ residentId, residentsList, onBack }
               {/* Tab 1: Personal Information */}
               {activeTab === "personal" && (
                 <div className="space-y-6">
-                  <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2">Personal Details</h3>
+                  <h3 className="text-sm font-serif font-bold text-[#E8198A] border-b border-[#F8BBD0] pb-2">Personal Details (RBI Form B)</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {resident.philsysCardNo && (
+                      <div className="md:col-span-2 bg-[#FCE4EC] border border-[#F8BBD0] p-2.5 rounded-xs">
+                        <p className="text-[10px] uppercase font-mono text-[#E8198A] font-bold">PhilSys Card No. (National ID)</p>
+                        <p className="font-mono font-bold text-[#16324A] mt-0.5">{resident.philsysCardNo}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-[10px] uppercase font-mono text-slate-400">First Name</p>
                       <p className="font-semibold text-[#16324A] mt-0.5">{resident.firstName}</p>
@@ -175,11 +181,15 @@ export default function ResidentDetailView({ residentId, residentsList, onBack }
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-mono text-slate-400">Last Name</p>
-                      <p className="font-semibold text-[#16324A] mt-0.5">{resident.lastName}</p>
+                      <p className="font-semibold text-[#16324A] mt-0.5">{resident.lastName} {resident.extensionName ? `(${resident.extensionName})` : ""}</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-mono text-slate-400">Date of Birth</p>
                       <p className="font-semibold text-[#16324A] mt-0.5">{resident.birthDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-mono text-slate-400">Place of Birth</p>
+                      <p className="font-semibold text-[#16324A] mt-0.5">{resident.birthPlace || "—"}</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-mono text-slate-400">Sex</p>
@@ -189,9 +199,13 @@ export default function ResidentDetailView({ residentId, residentsList, onBack }
                       <p className="text-[10px] uppercase font-mono text-slate-400">Civil Status</p>
                       <p className="font-semibold text-[#16324A] mt-0.5">{resident.civilStatus}</p>
                     </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-mono text-slate-400">Religion</p>
+                      <p className="font-semibold text-[#16324A] mt-0.5">{resident.religion || "—"}</p>
+                    </div>
                   </div>
 
-                  <h3 className="text-sm font-serif font-bold text-[#16324A] border-b border-[#D1D7CE] pb-2 pt-4">Work & Contact</h3>
+                  <h3 className="text-sm font-serif font-bold text-[#E8198A] border-b border-[#F8BBD0] pb-2 pt-4">Work, Education & Contact</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-[10px] uppercase font-mono text-slate-400">Occupation</p>
@@ -202,8 +216,16 @@ export default function ResidentDetailView({ residentId, residentsList, onBack }
                       <p className="font-semibold text-[#16324A] mt-0.5">{resident.company || "N/A"}</p>
                     </div>
                     <div>
+                      <p className="text-[10px] uppercase font-mono text-slate-400">Educational Attainment</p>
+                      <p className="font-semibold text-[#16324A] mt-0.5">{resident.educationalAttainment || "None"} ({resident.educationStatus || "Graduate"})</p>
+                    </div>
+                    <div>
                       <p className="text-[10px] uppercase font-mono text-slate-400">Contact Number</p>
                       <p className="font-semibold text-[#16324A] mt-0.5">{resident.contactNumber || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-mono text-slate-400">E-mail Address</p>
+                      <p className="font-semibold text-[#16324A] mt-0.5">{resident.emailAddress || "—"}</p>
                     </div>
                   </div>
 

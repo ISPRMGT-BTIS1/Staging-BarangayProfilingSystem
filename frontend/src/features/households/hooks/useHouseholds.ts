@@ -18,8 +18,8 @@ export function useHouseholds(search?: string) {
       const q = search.toLowerCase()
       return list.filter(
         (h) =>
-          h.householdId.toLowerCase().includes(q) ||
-          h.houseNumber.toLowerCase().includes(q),
+          String(h.householdId || '').toLowerCase().includes(q) ||
+          String(h.houseNumber || '').toLowerCase().includes(q),
       )
     },
   })
